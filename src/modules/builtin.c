@@ -6,6 +6,7 @@
 #include <gc/gc.h>
 #include <stdint.h>
 #include <time.h>
+#include <math.h>
 
 bool builtin_stksize(VM* vm) {
     fpPush(vm, fpFromDouble(fpStackSize(vm)));
@@ -636,6 +637,63 @@ bool builtin_sort(VM* vm) {
     return true;
 }
 
+bool builtin_math1(VM* vm) {
+    double x;
+    int op;
+    if (!fpExtract(vm, "di", &x, &op)) return false;
+    double result;
+    switch (op) {
+        case 0: result = sin(x * (M_PI / 180)); break;
+        case 1: result = cos(x * (M_PI / 180)); break;
+        case 2: result = tan(x * (M_PI / 180)); break;
+        case 3: result = asin(x) * (180 / M_PI); break;
+        case 4: result = acos(x) * (180 / M_PI); break;
+        case 5: result = atan(x) * (180 / M_PI); break;
+        case 6: result = exp(x); break;
+        case 7: result = exp2(x); break;
+        case 8: result = log(x); break;
+        case 9: result = log10(x); break;
+        case 10: result = log2(x); break;
+        case 11: result = sqrt(x); break;
+        case 12: result = 1 / sqrt(x); break;
+        case 13: result = floor(x); break;
+        case 14: result = round(x); break;
+        case 15: result = ceil(x); break;
+        case 16: result = trunc(x); break;
+        case 17: result = x - floor(x); break;
+        case 18: result = copysign(1, x); break;
+        case 19:
+            switch (fpclassify(x)) {
+                case FP_NAN: result = 0; break;
+                case FP_INFINITE: result = 1; break;
+                case FP_ZERO: result = 2; break;
+                case FP_SUBNORMAL: result = 3; break;
+                case FP_NORMAL: result = 4; break;
+            } break;
+        default:
+            fpRaiseInvalid(vm, "invalid operation");
+            return false;
+    }
+    fpPush(vm, FROM_NUMBER(result));
+    return true;
+}
+
+bool builtin_math2(VM* vm) {
+    double x, y;
+    int op;
+    if (!fpExtract(vm, "ddi", &x, &y, &op)) return false;
+    double result;
+    switch (op) {
+        case 0: result = atan2(x, y) * (180 / M_PI); break;
+        case 1: result = logb(x) / logb(y); break;
+        default:
+            fpRaiseInvalid(vm, "invalid operation");
+            return false;
+    }
+    fpPush(vm, FROM_NUMBER(result));
+    return true;
+}
+
 bool builtin_test(VM* vm) {
     int n;
     int* ns;
@@ -706,6 +764,8 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(lstsub);
     REGISTER(rand);
     REGISTER(sort);
+    REGISTER(math1);
+    REGISTER(math2);
     REGISTER(test);
     return true;
 }

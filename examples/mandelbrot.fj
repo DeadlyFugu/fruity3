@@ -1,0 +1,29 @@
+import math
+import math.complex
+
+mandelbrot: { a => (
+    51 repeat $a
+    fold {c z => $z * $z + $c}
+)}
+
+asciis: cat(
+    ' .`-_\':,;^=+/"|)\\<>)iv%xclrs{*}I?!][1taeo7zjLu'
+    'nT#JCwfy325Fp6mqSghVd4EgXPGZbYkOA&8U@KHDBWNMR0Q'
+)
+
+asciis_len: len($asciis)
+
+asciify: {
+    * $asciis_len int
+    0 $asciis_len - 1 math.clamp
+    asciis.get
+}
+
+math.range(-1 1 0.05) map {y =>
+    print! cat(math.range(-2 0.5 0.0315) map {x =>
+        $x $y complex mandelbrot .abs >>v
+        $v math.isnan
+            then ' '
+            else {$v / 2 math.saturate 1 swap sub asciify}
+    })
+}

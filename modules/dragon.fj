@@ -75,7 +75,7 @@ float: {.float}
 negate: {0 - ()}
 
 open: {.open}
-len: {.len}
+len: {.size}
 
 switch: {
     reverse >>val
@@ -108,7 +108,7 @@ profile: {
 }
 
 Number.float: {self}
-Number.int: {self _builtin.ffloor}
+Number.int: {self 16 _builtin.math1}
 Number._eq: {is self}
 
 String.float: {self _builtin.strtof}
