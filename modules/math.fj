@@ -1,0 +1,7 @@
+import dragon
+
+square: {dragon.dup mul}
+
+fac: {to 1 fold $mul}
+
+sum: {fold $add}

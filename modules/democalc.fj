@@ -1,0 +1,168 @@
+
+// objects for each table
+opobjs: list(
+    :{lexeme: '+' prec: 2 assoc: #left fn: $add}
+    :{lexeme: '-' prec: 2 assoc: #left fn: $sub}
+    :{lexeme: '*' prec: 3 assoc: #left fn: $mul}
+    :{lexeme: '/' prec: 3 assoc: #left fn: $div}
+    :{lexeme: '^' prec: 4 assoc: #right fn: {a b => a ^ b}}
+)
+
+// values for switch()
+opswitch: list(opobjs.open map {dup $.lexeme swap} default nil)
+
+// convert lexeme -> operator
+opfind: {
+    switch(. opswitch.open)
+}
+
+funcs: list('sqrt')
+
+shunting_yard: {
+    tokens: list(input .split(' ') reverse)
+    output: list()
+    ops: list()
+    until {tokens.empty} do {
+        t: tokens.pop
+        v: nil
+        chain(
+            // is float?
+            {safe! {$t float >v}} {
+                output.push! $v
+            }
+            // is operator?
+            {$t opfind dup >v} {
+                // todo: complex conditions might be easier with some module?
+                // e.g. ceval("a < b || (a == b && c < b)" @a 1 @b 2 @c 3)
+                // todo: use any
+                until {ops.empty or! {ops.peek is '(' or! {
+                    ops.peek $.prec >>oprec
+                    // todo: below might be cleaner with then/else
+                    $oprec < $v.prec or! {$oprec = $v.prec and! {$v.assoc = #left}}
+                }}} do {
+                    output.push! ops.pop
+                }
+                ops.push! $v
+            }
+            // lparen
+            {$t is '('} {
+                ops.push! $t
+            }
+            // rparen
+            {$t is ')'} {
+                until {ops.peek is '('} do {
+                    safe! {ops.pop} else {throw! 'mismatched parens'}
+                    output.push
+                }
+                ops.pop pop
+            }
+            default {
+                throw! cat('unexpected token ' $t)
+            }
+        )
+    }
+    until {ops.empty} do {
+        output.push! ops.pop
+    }
+    $output open map {f => ?f.fn then {f.fn} else $f}
+    print
+}
+
+sy2: {
+    print(input eval2)
+}
+
+any: {
+    reverse fold {a b => $b then $b else $a}
+}
+all: {
+    reverse fold {a b => $b then $a else $b}
+}
+
+eval2: {
+    ops: list()
+    .split(' ') map { t =>
+        v: nil
+        switch($t
+            // is float?
+            {safe! {float dup}} {}
+            // is operator?
+            {opfind dup >v} {
+                // todo: complex conditions might be easier with some module?
+                // e.g. ceval("a < b || (a == b && c < b)" @a 1 @b 2 @c 3)
+                until {any(
+                    ops.empty
+                    {ops.peek is '('}
+                    {ops.peek $.prec
+                        $v.assoc = #left then {< $v.prec} else {<= $v.prec}}
+                )} do {
+                    ops.pop $.fn
+                }
+                $v ops.push
+            }
+            // lparen
+            '(' {
+                $t ops.push
+            }
+            // rparen
+            ')' {
+                until {ops.peek is '('} do {
+                    safe! {ops.pop $.fn} else {throw! 'mismatched parens'}
+                }
+                ops.pop pop
+            }
+            default {
+                throw! cat('unexpected token ' $t)
+            }
+        )
+    }
+    (ops.open reverse map {$.fn})
+    map $apply
+}
+
+run: $sy2
+
+assert: { f =>
+    f() not then {throw! 'assertion failed'}
+}
+tests: {(
+    assert! {'2 + 2' eval2 = 4}
+    assert! {'4 - 6' eval2 = negate(2)}
+    assert! {'3 * 6' eval2 = 18}
+    assert! {'1 + 2 * 3' eval2 = 7}
+    assert! {'2 * 1 + 1' eval2 = 3}
+    assert! {'2 * ( 1 + 1 )' eval2 = 4}
+    assert! {'1 - 2 - 3' eval2 = negate(4)}
+    assert! {'4 ^ 3 ^ 2' eval2 = 262144}
+    print! 'tests ok'
+)}
+
+// tests
+
+genexpr: { n =>
+    depth: 0
+    _builtin.rand % 10
+    $n repeat {
+        // 25% chance of (
+        $depth > 0 and! {_builtin.rand % 4 = 0} then {
+            ')' $depth - 1 >depth
+        }
+        // choose random op
+        switch(_builtin.rand % 5
+            0 '+' 1 '-' 2 '*' 3 '/' 4 '^'
+        )
+        // 25% chance of (
+        _builtin.rand % 4 = 0 then {
+            '(' $depth + 1 >depth
+        }
+        _builtin.rand % 10
+    }
+    $depth repeat ')'
+    join! ' '
+}
+
+runtest: {input eval2 list print(. .sub(0 5))}
+
+?_main then $run
+
+_export: {run()}

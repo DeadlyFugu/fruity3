@@ -1,0 +1,6 @@
+compile_commands.json
+fp
+build
+modules/mod*.so
+.clangd
+attic

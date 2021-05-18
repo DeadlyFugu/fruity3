@@ -1,0 +1,24 @@
+import pcre2
+
+regex: :{}
+
+regex.match: { pattern s =>
+    (
+        $pattern $s pcre2.match
+        zip {s.sub}
+        size > 1 then {under pop}
+        empty then nil
+    )
+}
+
+_test: {
+    regex.match('^[\\s]*(.*?)[\\s]*$' '   hello world!  ')
+}
+
+// if ran directly, behave like grep?
+?_main then {
+    // todo...
+    throw! 'not yet implemented'
+}
+
+_export: $regex
