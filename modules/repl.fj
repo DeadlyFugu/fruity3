@@ -36,8 +36,25 @@ Repl.minirepl: { f =>
 // Print exception nicely
 // todo: Parts of this should be a method on Exception
 print_ex: { ex =>
-    print! 'EXCEPTION'
-    print! $ex
+    print(crayons.red! $ex.key ' ' $ex.message cat)
+    (
+        $ex.trace open
+        size <= 2 then {print(crayons.faint! '(trace not available)')}
+        else {
+            pop pop
+            map { t =>
+                // todo: ideally this would be in dragon but
+                //       i dont want dragon to depend on crayons
+                ?t.source then {print($t.source >>s
+                    crayons.faint! '@ '
+                    s.sub(0 $t.begin - 1)
+                    crayons.bold! crayons.red! s.sub($t.begin - 1 $t.end - 1)
+                    s.sub($t.end - 1 nil) cat
+                )}
+                else {print! crayons.faint! '(native code)'}
+            }
+        }
+    )
 }
 
 // Evaluate a string of code within the current repl

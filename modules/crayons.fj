@@ -36,7 +36,7 @@ colorizer.list: {
 }
 colorizer.context: { ctx => (
     $ctx lsv sort map { k =>
-        colorizer.red! cat(k.name ':')
+        crayons.red! cat(k.name ':')
         crayons.rep(getv($ctx $k))
     }
     join! ' ' cat(':{' . '}')
@@ -74,9 +74,10 @@ _export: $crayons
     print('\nExamples of different formatting below:')
 
     $crayons lsv
-    // filter {!= #reset}
+    // todo: fix filter and join
+    filter! {k => $k != #reset and! {$k != #rep}}
     sort map { k =>
         f: getv($crayons $k)
-        print! f('crayons.' k.name)
+        print! f('crayons.' k.name cat)
     }
 }

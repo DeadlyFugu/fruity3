@@ -29,6 +29,7 @@ struct sVM {
     Context* context;
     Symbol symSelf, symThis, symOps[20], symExs[5];
     Symbol symKey, symValue, symMessage, symTrace;
+    // instead have a context exposed to fruity with module contexts bound within?
     ModuleInfo** modules;
     int moduleCount;
     Context* typeProtos[8];

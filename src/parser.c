@@ -554,6 +554,40 @@ void dumpError(VM* vm) {
     }
 }
 
+Stack* genTraceList(VM* vm) {
+    Stack* list = GC_MALLOC(sizeof(Stack));
+    *list = (Stack) {};
+    ExceptionTrace* trace = vm->exTraceFirst;
+    // todo: put these syms on vm or something
+    Symbol symSource = Symbol_find("source", 6);
+    Symbol symLine = Symbol_find("line", 4);
+    Symbol symBegin = Symbol_find("begin", 5);
+    Symbol symEnd = Symbol_find("end", 3);
+    Symbol symNative = Symbol_find("native", 6);
+    Symbol symHidden = Symbol_find("hidden", 6);
+    while (trace) {
+        Context* t = Context_create(NULL);
+        if (!trace->module->native) {
+            RangeInfo info;
+            findRangeInfo(trace->module->source, trace->range, &info);
+            const char* source = GC_strndup(info.firstLine, info.firstLineLength);
+            Context_bind(t, symSource, FROM_STRING(source));
+            Context_bind(t, symLine, FROM_NUMBER(info.startLine));
+            Context_bind(t, symBegin, FROM_NUMBER(info.startColumn));
+            int end = info.startLine == info.endLine ?
+                info.endColumn : info.firstLineLength;
+            Context_bind(t, symEnd, FROM_NUMBER(end));
+        }
+        // todo: we could avoid binding native hidden etc. if we just
+        //       expose a Module object within fruity
+        if (trace->module->native) Context_bind(t, symNative, VAL_TRUE);
+        if (trace->module->hideTrace) Context_bind(t, symHidden, VAL_TRUE);
+        Stack_push(list, FROM_CONTEXT(t));
+        trace = trace->next;
+    }
+    return list;
+}
+
 bool fpExpectToken(Parser* parser, TokenKind kind, bool error);
 bool fpHasNextUnit(Parser* parser);
 AstNode* fpParseBody(Parser* parser, bool single);

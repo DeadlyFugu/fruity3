@@ -14,6 +14,9 @@ typedef enum {
 // todo: expose via header
 extern const char* gc_sprintf(const char* fmt, ...);
 
+// todo: this should be in vm
+extern Stack* genTraceList(VM* vm);
+
 static bool evalNode(VM* vm, AstNode* node);
 static ResolveStatus chainResolve(VM* vm, AstNode* node,
     Context** base, AstChainElem** chainElem, Value* self);
@@ -957,7 +960,7 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
                 Context* ex = Context_create(vm->exProto);
                 Context_bind(ex, vm->symKey, FROM_SYMBOL(vm->exSymbol));
                 Context_bind(ex, vm->symMessage, FROM_STRING(vm->exMessage));
-                // todo: bind trace as list
+                Context_bind(ex, vm->symTrace, FROM_LIST(genTraceList(vm)));
                 Stack_push(vm->stack, FROM_CONTEXT(ex));
                 if (!evalCall(vm, node, sub, NULL)) return false;
             }

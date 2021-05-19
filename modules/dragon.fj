@@ -135,6 +135,8 @@ String.chars: {self _builtin.strunmk}
 // X match! Y -> $X Y.match (if ?Y.match)
 //            -> $X is $Y   (otherwise)
 String.get: {i => self $i $i + 1 dup is 0 then {pop nil} _builtin.strsub}
+// todo: better name than sub? (i think i had one down in one of the
+// ideas docs?)
 String.sub: {begin end => self $begin $end _builtin.strsub}
 String.find: {o => self $o _builtin.strstr}
 String.count: {o => top($o self.split size - 1)}
