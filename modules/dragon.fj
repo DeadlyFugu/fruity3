@@ -31,12 +31,16 @@ mul: {o => * $o}
 div: {o => / $o}
 
 // todo: should .tostr be the casting method instead?
-str: {dup ?.str then {.str} else $_builtin.valstr}
-rep: {dup ?.rep then {.rep} else $str}
+str: {dup ?.str then {dup $.str is $str then $_builtin.valstr else {.str}} else $_builtin.valstr}
+rep: {dup ?.rep then {dup $.rep is $rep then $str else {.rep}} else $str}
 
-print: {str '\n' _builtin.strcat(..) _builtin.dbgput}
-printw: {str _builtin.dbgput}
-input: $_builtin.dbgget
+print: {str '\n' _builtin.strcat(..) _builtin.print}
+printw: {str _builtin.print}
+prompt: $_builtin.prompt
+input: {'' prompt}
+
+parse: {root _builtin.parse}
+eval: {parse :{} apply}
 
 match: {f =>
     ?f.match then {dup f.match}
@@ -45,6 +49,7 @@ match: {f =>
 
 apply: {f => f}
 cat: {map $str _builtin.strcat}
+// todo: below impl fails on empty stack
 join: {s => map $s pop cat}
 mkstr: $_builtin.strmk
 char: {

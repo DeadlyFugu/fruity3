@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <time.h>
 #include <math.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 bool builtin_stksize(VM* vm) {
     fpPush(vm, fpFromDouble(fpStackSize(vm)));
@@ -422,23 +424,30 @@ bool builtin_strunesc(VM* vm) {
     return true;
 }
 
-bool builtin_dbgput(VM* vm) {
+bool builtin_print(VM* vm) {
     const char* s;
     if (!fpExtract(vm, "s", &s)) return false;
     printf("%s", s);
     return true;
 }
 
-bool builtin_dbgget(VM* vm) {
-    // todo: handle lines over 1024 chars
-    char buf[10240];
-    fgets(buf, 10240, stdin);
-    // todo: make other string allocs fpAllocData
-    int len = strlen(buf);
-    char* copy = fpAllocData(len);
-    memcpy(copy, buf, len);
-    copy[len - 1] = 0;
-    fpPush(vm, fpFromString(copy));
+bool builtin_prompt(VM* vm) {
+    const char* s;
+    if (!fpExtract(vm, "s", &s)) return false;
+    char* line = readline(s);
+    if (!line) {
+        fpPush(vm, fpNil);
+    } else {
+        fpPush(vm, fpFromString(GC_strdup(line)));
+        free(line);
+    }
+    return true;
+}
+
+bool builtin_addhist(VM* vm) {
+    const char* s;
+    if (!fpExtract(vm, "s", &s)) return false;
+    add_history(s);
     return true;
 }
 
@@ -694,6 +703,40 @@ bool builtin_math2(VM* vm) {
     return true;
 }
 
+bool builtin_parse(VM* vm) {
+    const char* source;
+    Context* ctx;
+    if (!fpExtract(vm, "sc", &source, &ctx)) return false;
+    ModuleInfo* module = GC_MALLOC(sizeof(ModuleInfo));
+    *module = (ModuleInfo) { "<parse>", source };
+    Block* b = fpParse(module);
+    if (!b) {
+        fpRaiseInvalid(vm, "parse error");
+        return false;
+    }
+
+    Closure* clos = GC_MALLOC(sizeof(Closure));
+    clos->node = b->first;
+    clos->binding = ctx;
+    fpPush(vm, FROM_CLOSURE(clos));
+    return true;
+}
+
+bool builtin_evalin(VM* vm) {
+    Closure* clos;
+    Context* ctx;
+    if (!fpExtract(vm, "fc", &clos, &ctx)) return false;
+    Context* oldCtx = vm->context;
+    vm->context = ctx;
+    // todo: this wont work for native fns... or a lot of things
+    //       should try to use evalCall from vm.c
+    Block b = { .first = clos->node };
+    bool result = VM_eval(vm, &b);
+    vm->context = oldCtx;
+    if (!result) return false;
+    return true;
+}
+
 bool builtin_test(VM* vm) {
     int n;
     int* ns;
@@ -728,8 +771,9 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(bitor);
     REGISTER(bitxor);
     REGISTER(bitnot);
-    REGISTER(dbgput);
-    REGISTER(dbgget);
+    REGISTER(print);
+    REGISTER(prompt);
+    REGISTER(addhist);
     REGISTER(strcat);
     REGISTER(strmk);
     REGISTER(strunmk);
@@ -766,6 +810,8 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(sort);
     REGISTER(math1);
     REGISTER(math2);
+    REGISTER(parse);
+    REGISTER(evalin);
     REGISTER(test);
     return true;
 }

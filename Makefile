@@ -5,8 +5,8 @@ SRC_DIR := src
 OBJ_DIR := build
 
 CC := clang
-CFLAGS := -g -Werror -O2 -flto
-LDFLAGS := -O2 -flto -rdynamic
+CFLAGS := -g -Werror
+LDFLAGS := -rdynamic
 CPPFLAGS := -MMD -MP
 LDLIBS := -lm -ldl -lgc -lreadline
 

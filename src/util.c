@@ -168,6 +168,13 @@ static bool extractValue(VM* vm, char kind, Value v, void* dst) {
             }
             *(Stack**) dst = GET_LIST(v);
         } break;
+        case 'f': {
+            if (t != TYPE_CLOSURE) {
+                raiseType(vm, NULL, TYPE_CLOSURE);
+                return false;
+            }
+            *(Closure**) dst = GET_CLOSURE(v);
+        } break;
         default: {
             assert(0 && "invalid sig char");
         }

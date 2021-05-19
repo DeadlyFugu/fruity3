@@ -498,7 +498,7 @@ void dumpError(VM* vm) {
     // optionally the location if within a native module)
     ExceptionTrace* trace = vm->exTraceFirst;
     // todo: exSourceHasTrace is probably redundant
-    if (vm->exSourceHasTrace && trace->module->native) {
+    if (vm->exSourceHasTrace && trace && trace->module->native) {
         struct winsize ws;
         ioctl(0, TIOCGWINSZ, &ws);
         char label[256];
@@ -524,9 +524,12 @@ void dumpError(VM* vm) {
             vm->exMessage);
     }
     // print backtrace source lines
+    if (!trace) {
+        printf("\033[2m(trace not available)\033[0m\n");
+    }
     int hiddenTraces = 0;
     while (trace) {
-        if (trace->module->hideTrace) {
+        if (trace->module->hideTrace && !vm->fullTrace) {
             hiddenTraces++;
         } else {
             if (hiddenTraces) {

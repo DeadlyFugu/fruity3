@@ -1,0 +1,76 @@
+import builtin
+
+print_stack: {
+    map $rep empty else {join! ' ' print}
+}
+
+Repl: :{}
+
+// Creates a new repl, useful for simulating repl behaviour
+Repl.new: {
+    :{ context: (:{ prev: {} } as root) }
+    as $Repl
+}
+
+// Push the contents of the stack from the previous evaluation
+Repl.prev: { self.context.prev }
+
+// Run a new repl using a custom function
+// todo: should this just be defined on the module repl?
+Repl.minirepl: { f =>
+    print! 'use ctrl-d to exit minirepl'
+    line: nil
+    until {
+        prompt! '- ' >line
+        $line is nil
+    } do {
+        $line builtin.addhist
+        out: nil
+        {list(f($line)) >out} catch $print
+        $out then {print_stack(out.open)}
+    }
+    print! ''
+}
+
+// Print exception nicely
+// todo: Parts of this should be a method on Exception
+print_ex: { ex =>
+    print! 'EXCEPTION'
+    print! $ex
+}
+
+// Evaluate a string of code within the current repl
+// todo: ideally this shouldnt print directly?
+//       how do we capture print output for bites?
+Repl.eval: {
+    $self.context builtin.parse
+    out: nil ex: nil
+    {list(. $self.context builtin.evalin) >out} catch {dup >ex}
+    $out then {
+        print_stack(out.open)
+        {out.open} >>self.context.prev
+    } else {
+        print_ex($ex)
+        {$ex} >>self.context.prev
+    }
+}
+
+// Run the current repl with user input
+Repl.run: {
+    until {
+        prompt! '> ' dup then {
+            dup builtin.addhist
+            dup self.eval
+        }
+        not
+    }
+    print! ''
+}
+
+// Create a new Repl instance and export as module
+_export: Repl.new()
+
+// If this module is loaded as main, run repl delayed
+// (we need to delay so that module is fully loaded first)
+this >>repl
+?_main then {{_export.run} >>repl._delay}

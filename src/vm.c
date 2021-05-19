@@ -18,7 +18,7 @@ static bool evalNode(VM* vm, AstNode* node);
 static ResolveStatus chainResolve(VM* vm, AstNode* node,
     Context** base, AstChainElem** chainElem, Value* self);
 static Context* getContext(VM* vm, Value v);
-static bool evalCall(VM* vm, AstNode* caller, Value v, Value* self);
+bool evalCall(VM* vm, AstNode* caller, Value v, Value* self);
 static bool applyOperator(VM* vm, AstNode* node, Value lhs, int op);
 static bool isTruthy(Value v);
 static bool evalAndPop(VM* vm, AstNode* node, Value* value);
@@ -437,7 +437,7 @@ static Context* getContext(VM* vm, Value v) {
     }
 }
 
-static bool evalCall(VM* vm, AstNode* caller, Value v, Value* self) {
+bool evalCall(VM* vm, AstNode* caller, Value v, Value* self) {
     if (GET_TYPE(v) == TYPE_CLOSURE) {
         Closure* closure = GET_CLOSURE(v);
         if (!closure->binding) { // is native
@@ -863,6 +863,8 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
                     result = GET_ODDBALL(lhs) == GET_ODDBALL(sub); break;
                 case TYPE_CONTEXT:
                     result = GET_CONTEXT(lhs) == GET_CONTEXT(sub); break;
+                case TYPE_CLOSURE:
+                    result = GET_CLOSURE(lhs) == GET_CLOSURE(sub); break;
                 // todo: lists? blobs?
                 default: result = false;
             }
@@ -1025,22 +1027,24 @@ static void traceNode(VM* vm, AstNode* node) {
     // omit redundant frames from being emitted in traces
     // specifically this is frames like 'then {...}' which are within
     // a single function
-    switch (node->kind) {
-        case AST_THEN_ELSE:
-        case AST_UNTIL_DO: {
-            // todo: no way to tell if left or right child caused error
-            // so require that both are closures to omit trace
-            // possible resolution: somehow annoted previous trace with
-            // direction taken?
-            bool omitTrace = true;
-            if (node->sub && node->sub->kind != AST_CLOSURE) omitTrace = false;
-            if (node->as_node && node->as_node->kind != AST_CLOSURE) omitTrace = false;
-            if (omitTrace) return;
-        } break;
-        case AST_SPECIAL: {
-            if (node->sub->kind == AST_CLOSURE) return;
-        } break;
-        default: break;
+    if (vm->exTraceFirst) {
+        switch (node->kind) {
+            case AST_THEN_ELSE:
+            case AST_UNTIL_DO: {
+                // todo: no way to tell if left or right child caused error
+                // so require that both are closures to omit trace
+                // possible resolution: somehow annoted previous trace with
+                // direction taken?
+                bool omitTrace = true;
+                if (node->sub && node->sub->kind != AST_CLOSURE) omitTrace = false;
+                if (node->as_node && node->as_node->kind != AST_CLOSURE) omitTrace = false;
+                if (omitTrace) return;
+            } break;
+            case AST_SPECIAL: {
+                if (node->sub->kind == AST_CLOSURE) return;
+            } break;
+            default: break;
+        }
     }
 
     // allocate a new trace node and insert at end of list

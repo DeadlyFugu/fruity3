@@ -19,9 +19,10 @@ int main(int argc, char** argv) {
     int runKind = 0; // 0 - repl, 1 - file, 2 - module, 3 - eval
     bool useFallback = false;
     bool isFreestanding = false;
+    bool fullTrace = false;
 
     int option;
-    while ((option = getopt(argc, argv, "e:m:M:fFh")) != -1) {
+    while ((option = getopt(argc, argv, "e:m:M:fFht")) != -1) {
         switch (option) {
             // e -- Evaluate
             case 'e': {
@@ -53,6 +54,9 @@ int main(int argc, char** argv) {
             case 'F': {
                 isFreestanding = true;
             } break;
+            case 't': {
+                fullTrace = true;
+            } break;
             // x -- skip first line of source, allowing hashbangs
             // case 'x': {
             //     // todo: implement
@@ -67,6 +71,7 @@ int main(int argc, char** argv) {
                 printf("    -M path    add a path to search for modules on\n");
                 printf("    -f         use fallback repl\n");
                 printf("    -F         Freestanding (dont import dragon)\n");
+                printf("    -t         don't hide internal Traces\n");
                 // printf("    -x\n");
                 printf("    -h         show this help message\n");
                 exit(0);
@@ -104,7 +109,7 @@ int main(int argc, char** argv) {
     rl_bind_key('\t', rl_insert);
     
     GC_INIT();
-    VM vm = {};
+    VM vm = { .fullTrace = fullTrace };
     VM_startup(&vm);
 
     if (!isFreestanding) {

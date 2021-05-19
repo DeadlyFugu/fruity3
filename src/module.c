@@ -88,6 +88,9 @@ bool Module_fromFile(VM* vm, const char* path, bool main) {
     return loadFruityModule(vm, info, path);
 }
 
+// todo: expose properly
+extern bool evalCall(VM* vm, AstNode* caller, Value v, Value* self);
+
 static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path) {
     FILE* mf = fopen(path, "r");
     if (!mf) {
@@ -119,6 +122,10 @@ static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path) {
     if (!VM_evalModule(vm, block, ctx)) return false;
     Value* exports = Context_get(ctx, Symbol_find("_export", 7));
     if (exports) info->value = *exports;
+    Value* delay = Context_get(ctx, Symbol_find("_delay", 6));
+    if (delay) {
+        if (!evalCall(vm, NULL, *delay, NULL)) return false;
+    }
     Stack_push(vm->stack, info->value);
 
     return true;
