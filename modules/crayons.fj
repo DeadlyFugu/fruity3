@@ -1,0 +1,82 @@
+
+crayons: :{}
+
+escape: char(27)
+wrap: {s n => cat($escape '[' $n 'm' $s $escape '[0m')}
+
+crayons.reset: {cat($escape '[0m')}
+
+crayons.bold:    {1 wrap}
+crayons.faint:   {2 wrap}
+crayons.invert:  {7 wrap}
+
+crayons.black:   {30 wrap}
+crayons.red:     {31 wrap}
+crayons.green:   {32 wrap}
+crayons.yellow:  {33 wrap}
+crayons.blue:    {34 wrap}
+crayons.magenta: {35 wrap}
+crayons.cyan:    {36 wrap}
+crayons.white:   {37 wrap}
+
+rainbow: list(
+    $crayons.red $crayons.yellow $crayons.green
+    $crayons.cyan $crayons.blue $crayons.magenta)
+crayons.rainbow: {(. open enumerate zip {swap % 6 rainbow.get apply} cat)}
+
+colorizer: :{}
+colorizer.number: $crayons.yellow
+colorizer.symbol: $crayons.blue
+colorizer.string: {rep crayons.green}
+colorizer.closure: $crayons.red // todo: impl
+colorizer.oddball: $crayons.yellow
+colorizer.list: {
+    (. open map $crayons.rep join! ' ')
+    cat(crayons.cyan! 'list' '(' . ')')
+}
+colorizer.context: { ctx => (
+    $ctx lsv sort map { k =>
+        colorizer.red! cat(k.name ':')
+        crayons.rep(getv($ctx $k))
+    }
+    join! ' ' cat(':{' . '}')
+)}
+colorizer.argument: { a =>
+    cat(crayons.yellow! cat('@' a.key.name) ' ' crayons.rep! $a.value)
+}
+// todo: ctor reference for openable would be preferable
+colorizer.openable: { swap >>ctor
+    cat(. open map $crayons.rep)
+    cat(crayons.cyan! $ctor '(' . ')')
+}
+
+
+crayons.rep: {
+    dup ?.visit
+        then {.visit($colorizer)}
+        else {colorizer.context}
+}
+
+_export: $crayons
+
+?_main then {
+    title: crayons.rainbow! 'Crayons'
+    print('Welcome to ' $title '!' cat)
+    print(
+        $title ' is a ' crayons.yellow! 'module'
+        ' to ' crayons.cyan! 'colorize'
+        ' your ' crayons.magenta! 'text' '!' cat)
+    
+    print('You can use it to wrap your text like so:')
+    print('> crayons.blue(\'helo wold!\') print')
+    print(crayons.blue! 'helo wold!')
+    
+    print('\nExamples of different formatting below:')
+
+    $crayons lsv
+    // filter {!= #reset}
+    sort map { k =>
+        f: getv($crayons $k)
+        print! f('crayons.' k.name)
+    }
+}

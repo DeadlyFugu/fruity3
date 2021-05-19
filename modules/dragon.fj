@@ -31,8 +31,8 @@ mul: {o => * $o}
 div: {o => / $o}
 
 // todo: should .tostr be the casting method instead?
-str: {dup ?.str then {dup $.str is $str then $_builtin.valstr else {.str}} else $_builtin.valstr}
-rep: {dup ?.rep then {dup $.rep is $rep then $str else {.rep}} else $str}
+str: {dup ?._str then {._str} else $_builtin.valstr}
+rep: {dup ?._rep then {._rep} else $str}
 
 print: {str '\n' _builtin.strcat(..) _builtin.print}
 printw: {str _builtin.print}
@@ -74,6 +74,8 @@ not: {then false else true}
 and: {a b => $a then $b else $a}
 or: {a b => $a then $a else $b}
 
+// todo: make a whole bunch of common methods underscore prefixed?
+// so `root int` etc. doesnt call int recursively
 int: {.int}
 float: {.float}
 // abs: {.abs}
@@ -105,6 +107,11 @@ chain: {
 }
 filter: {f => map {n => f($n) then $n}}
 
+enumerate: {
+    n: 0
+    map {$n dup + 1 >n swap}
+}
+
 profile: {
     start: _builtin.clock
     clear(. apply)
@@ -115,6 +122,7 @@ profile: {
 Number.float: {self}
 Number.int: {self 16 _builtin.math1}
 Number._eq: {is self}
+Number.visit: {.number(self)}
 
 String.float: {self _builtin.strtof}
 String.int: {self _builtin.strtoi}
@@ -147,14 +155,20 @@ String.lower: {self _builtin.strlower}
 String.isupper: {self _builtin.strisup}
 String.islower: {self _builtin.strislo}
 String.size: {self _builtin.strlen}
-String.rep: {self _builtin.valstr}
-String.str: {self}
+String._rep: {self _builtin.valstr}
+String._str: {self}
+String.visit: {.string(self)}
 String._eq: {is self}
 
 Symbol._eq: {is self}
+Symbol.name: {self str .drop(1)}
+Symbol.visit: {.symbol(self)}
 
 Closure.apply: {self}
 Closure.match: $Closure.apply
+Closure.visit: {.closure($self)}
+
+Oddball.visit: {.oddball(self)}
 
 list: $_builtin.list
 List.open: {self _builtin.lstopen}
@@ -186,16 +200,18 @@ List.find: {k =>
     )
 }
 List.contains: {v => self.find($v) is nil not}
+List.visit: {.list(self)}
 
 // todo: move pair elsewhere? ds?
 Pair: :{}
 pair: {head tail => this as $Pair}
-Pair.str: {cat('pair(' $self.head ' ' $self.tail ')')}
+Pair._str: {cat('pair(' $self.head ' ' $self.tail ')')}
+Pair.visit: {.openable('pair' self)}
 Pair.open: {$self.head $self.tail}
 Pair.swap: {$self.tail $self.head pair}
 Pair.copy: {pair(self.open)}
 Pair.clone: {pair(self.open map {.clone})}
-Pair.eq: {o => $self.head = $o.head and! {$self.tail = $o.tail}}
+Pair._eq: {o => $self.head = $o.head and! {$self.tail = $o.tail}}
 
 extend: { a b =>
     ($b lsv map {s => bindv($a $s $b $s getv)})
@@ -233,7 +249,7 @@ throw: { s =>
 }
 safe: {f => {f true} catch {pop false}}
 
-Reference.str: {
+Reference._str: {
     cat('<reference>')
 }
 Reference.get: {
@@ -258,5 +274,6 @@ argparse: {
 Argument.open: {
     $self.key $self.value
 }
+Argument.visit: {.argument(self)}
 
 exit: {0 _builtin.exit}

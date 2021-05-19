@@ -1,7 +1,8 @@
 import builtin
+import crayons
 
 print_stack: {
-    map $rep empty else {join! ' ' print}
+    map $crayons.rep empty else {join! ' ' print}
 }
 
 Repl: :{}
@@ -18,7 +19,7 @@ Repl.prev: { self.context.prev }
 // Run a new repl using a custom function
 // todo: should this just be defined on the module repl?
 Repl.minirepl: { f =>
-    print! 'use ctrl-d to exit minirepl'
+    print! crayons.faint! 'use ctrl-d to exit minirepl'
     line: nil
     until {
         prompt! '- ' >line
