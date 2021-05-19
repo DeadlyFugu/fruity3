@@ -737,6 +737,21 @@ bool builtin_evalin(VM* vm) {
     return true;
 }
 
+bool builtin_sysctl(VM* vm) {
+    int cmd;
+    if (!fpExtract(vm, "i", &cmd)) return false;
+    switch (cmd) {
+        case 0: { // get version
+            fpPush(vm, fpFromDouble(3.0));
+        } break;
+        default: {
+            fpRaiseInvalid(vm, "invalid command number");
+            return false;
+        }
+    }
+    return true;
+}
+
 bool builtin_test(VM* vm) {
     int n;
     int* ns;
@@ -812,6 +827,7 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(math2);
     REGISTER(parse);
     REGISTER(evalin);
+    REGISTER(sysctl);
     REGISTER(test);
     return true;
 }

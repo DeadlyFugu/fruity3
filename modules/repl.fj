@@ -34,7 +34,8 @@ Repl.minirepl: { f =>
 }
 
 // Print exception nicely
-// todo: Parts of this should be a method on Exception
+// todo: parts of this should be a method on Exception but i dont want
+//       dragon to depend on crayons
 print_ex: { ex =>
     print(crayons.red! $ex.key ' ' $ex.message cat)
     (
@@ -43,8 +44,7 @@ print_ex: { ex =>
         else {
             pop pop
             map { t =>
-                // todo: ideally this would be in dragon but
-                //       i dont want dragon to depend on crayons
+                // todo: properly
                 ?t.source then {print($t.source >>s
                     crayons.faint! '@ '
                     s.sub(0 $t.begin - 1)
@@ -61,15 +61,21 @@ print_ex: { ex =>
 // todo: ideally this shouldnt print directly?
 //       how do we capture print output for bites?
 Repl.eval: {
-    $self.context builtin.parse
-    out: nil ex: nil
-    {list(. $self.context builtin.evalin) >out} catch {dup >ex}
-    $out then {
-        print_stack(out.open)
-        {out.open} >>self.context.prev
-    } else {
-        print_ex($ex)
-        {$ex} >>self.context.prev
+    ok: true
+    $self.context $builtin.parse catch {
+        // todo: parse needs to throw error properly
+        false >ok
+    }
+    $ok then {
+        out: nil ex: nil
+        {list(. $self.context builtin.evalin) >out} catch {dup >ex}
+        $out then {
+            print_stack(out.open)
+            {out.open} >>self.context.prev
+        } else {
+            print_ex($ex)
+            {$ex} >>self.context.prev
+        }
     }
 }
 

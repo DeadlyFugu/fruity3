@@ -49,12 +49,20 @@ colorizer.openable: { swap >>ctor
     cat(. open map $crayons.rep)
     cat(crayons.cyan! $ctor '(' . ')')
 }
+colorizer.root: {pop crayons.yellow! 'root'}
 
-
+// todo: if passed a parent object (e.g. String or Argument) it will
+//       call the visit method on it. is there any way to distinguish
+//       the two?
+// todo: somehow detect self-referential loops
 crayons.rep: {
-    dup ?.visit
-        then {.visit($colorizer)}
+    dup ?._visit
+        then {._visit($colorizer)}
         else {colorizer.context}
+}
+
+crayons.heatmap: {
+    rainbow.get(. * 6 % 6 int) apply
 }
 
 _export: $crayons
@@ -75,7 +83,8 @@ _export: $crayons
 
     $crayons lsv
     // todo: fix filter and join
-    filter! {k => $k != #reset and! {$k != #rep}}
+    excluding: list(#reset #rep #heatmap)
+    filter! {excluding.contains not}
     sort map { k =>
         f: getv($crayons $k)
         print! f('crayons.' k.name cat)

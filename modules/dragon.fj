@@ -122,7 +122,7 @@ profile: {
 Number.float: {self}
 Number.int: {self 16 _builtin.math1}
 Number._eq: {is self}
-Number.visit: {.number(self)}
+Number._visit: {.number(self)}
 
 String.float: {self _builtin.strtof}
 String.int: {self _builtin.strtoi}
@@ -159,18 +159,18 @@ String.islower: {self _builtin.strislo}
 String.size: {self _builtin.strlen}
 String._rep: {self _builtin.valstr}
 String._str: {self}
-String.visit: {.string(self)}
+String._visit: {.string(self)}
 String._eq: {is self}
 
 Symbol._eq: {is self}
 Symbol.name: {self str .drop(1)}
-Symbol.visit: {.symbol(self)}
+Symbol._visit: {.symbol(self)}
 
 Closure.apply: {self}
 Closure.match: $Closure.apply
-Closure.visit: {.closure($self)}
+Closure._visit: {.closure($self)}
 
-Oddball.visit: {.oddball(self)}
+Oddball._visit: {.oddball(self)}
 
 list: $_builtin.list
 List.open: {self _builtin.lstopen}
@@ -202,13 +202,13 @@ List.find: {k =>
     )
 }
 List.contains: {v => self.find($v) is nil not}
-List.visit: {.list(self)}
+List._visit: {.list(self)}
 
 // todo: move pair elsewhere? ds?
 Pair: :{}
 pair: {head tail => this as $Pair}
 Pair._str: {cat('pair(' $self.head ' ' $self.tail ')')}
-Pair.visit: {.openable('pair' self)}
+Pair._visit: {.openable('pair' self)}
 Pair.open: {$self.head $self.tail}
 Pair.swap: {$self.tail $self.head pair}
 Pair.copy: {pair(self.open)}
@@ -276,6 +276,11 @@ argparse: {
 Argument.open: {
     $self.key $self.value
 }
-Argument.visit: {.argument(self)}
+Argument._visit: {.argument(self)}
 
 exit: {0 _builtin.exit}
+
+sys: :{}
+sys.version: (0 _builtin.sysctl)
+
+_visit: {.root(self)}

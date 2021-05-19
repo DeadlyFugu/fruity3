@@ -16,7 +16,7 @@ static void runFallbackRepl(VM* vm);
 
 int main(int argc, char** argv) {
     const char* run = NULL;
-    int runKind = 0; // 0 - repl, 1 - file, 2 - module, 3 - eval
+    int runKind = 0; // 0 - fallback repl, 1 - file, 2 - module, 3 - eval, 4 repl
     bool useFallback = false;
     bool isFreestanding = false;
     bool fullTrace = false;
@@ -96,6 +96,9 @@ int main(int argc, char** argv) {
     if (useFallback && runKind != 0) {
         printf("warning: ignoring -f option\n");
     }
+    if (runKind == 0 && !useFallback) {
+        runKind = 4;
+    }
 
     // switch (runKind) {
     //     case 0: printf("REPL\n"); break;
@@ -157,6 +160,14 @@ int main(int argc, char** argv) {
             }
             vm.context = NULL;
         } break;
+        case 4: {
+            if (!Module_import(&vm, "repl", true)) {
+                dumpError(&vm);
+                vm.stack->next = 0;
+                printf("entering fallback repl...\n");
+                runFallbackRepl(&vm);
+            }
+        } break;
     }
 
     return 0;
@@ -165,7 +176,7 @@ int main(int argc, char** argv) {
 static void runFallbackRepl(VM* vm) {
     vm->context = Context_create(vm->root);
     while (1) {
-        char* line = readline("> ");
+        char* line = readline("#> ");
         if (!line) {
             printf("\n");
             break;
