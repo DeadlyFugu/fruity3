@@ -1,0 +1,27 @@
+import math
+
+// Display messages
+print('I\'m thinking of a number from 1 to 99.')
+print('Can you guess it?')
+
+// Choose a number
+number: math.rand_range(1 99)
+
+// Loop until the user guesses correct
+until {
+    // Ask user for their guess
+    guess: int(prompt('guess: '))
+
+    // Compare to the chosen number
+    $guess <> $number dup
+
+    // Choose appropriate message to display
+    switch(.
+        1 'Too high'
+        0 'Correct!'
+        -1 'Too low'
+    ) print
+
+    // Loop end condition
+    = 0
+}

@@ -42,6 +42,7 @@ typedef enum TokenKind {
     TOK_MAP, TOK_FOLD, TOK_FILTER, TOK_ZIP,
     TOK_IS, TOK_AS, TOK_TO, TOK_DOT,
     TOK_JOIN, TOK_REPEAT, TOK_WITH, TOK_CATCH,
+    TOK_AND_KEYWORD, TOK_OR,
     TOK_BACKSLASH_IDENT, TOK_IMPORT, TOK_THIS, TOK_EQ_GT,
     TOK_ERROR
 } TokenKind;
@@ -49,7 +50,8 @@ typedef enum TokenKind {
 typedef enum SpecialKind {
     SPC_MAP, SPC_FOLD, SPC_FILTER, SPC_ZIP,
     SPC_IS, SPC_AS, SPC_TO, SPC_DOT,
-    SPC_JOIN, SPC_REPEAT, SPC_WITH, SPC_CATCH
+    SPC_JOIN, SPC_REPEAT, SPC_WITH, SPC_CATCH,
+    SPC_AND, SPC_OR
 } SpecialKind;
 
 // todo: probably go back to the more flexible any 3 symbol operators

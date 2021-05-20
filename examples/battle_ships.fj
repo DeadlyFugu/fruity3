@@ -1,0 +1,246 @@
+
+// Battleships game - remade in Fruity
+
+import crayons
+import ds
+import math
+import regex
+
+// Display start-up messages
+splashmsg: {
+  print('Battleships v1.1')
+  print(' (c) Matthew Turner 2015, ported in 2021')
+  print('')
+  print('How to play:')
+  print('Type a grid location to shoot there (e.g. \'A3\' will fire a shot at A3)')
+  print('')
+}
+
+// Function to decode coords
+trimws: {regex.match('^[\\s]*(.*?)[\\s]*$' .)}
+coord: {trimws >>coord
+  $coord .get(0) .upper char - char('A') + 1 >>y
+  $y < 1 or ($y > 10) then {throw! cat('Expected a letter between A and J, got ' coord.get(0))}
+  coord.endswith('10')
+  then 10
+  else {
+    len($coord) > 2
+    then -1
+    else {$coord .get(1) char - char('1') + 1}
+  }
+  >>x
+  $x < 1 or ($x > 10) then {throw! cat('Expected a number between 1 and 10, got ' coord.drop(1))}
+  $x $y
+}
+
+grid_string: { g =>
+  cat(
+    '  ' (1 to 10 join ' ') '\n\n' // print row numbers
+    (1 to 10 map {n => // for each row
+      mkstr($n + char('A') - 1) // print column number
+      ' ' (g.row($n - 1) open map $colorizer cat) '\n' // print values in row
+    })
+  )
+}
+
+// todo: remove csi/sgr (expose needed functionality in crayons?)
+csi: cat(char(27) '[')
+sgr: {join ';' cat($csi . 'm')}
+palette: list(#red #green #yellow #blue #magenta map {getv($crayons.bg .)})
+// Colorizer helper function, determines colors for characters
+colorizer: {ch =>
+  switch($ch
+    '?' {crayons.invert('? ')}
+    '.' {crayons.black! crayons.bg.cyan! '. '}
+    {char >>x all($x >= char('1') $x <= char('5'))}
+      {crayons.black(palette.get(char($ch) - char('1')) .apply('o '))}
+    {char >>x all($x >= char('6') $x <= char(':'))}
+      {crayons.red(palette.get(char($ch) - char('6')) .apply('x '))}
+    'x' {crayons.bold! crayons.bg.black! crayons.red! 'x '}
+    'o' {crayons.bold! crayons.bg.cyan! crayons.black! 'x '}
+    'm' {crayons.black! crayons.bg.cyan! 'x '}
+    default {
+      print('ERROR ' $ch rep cat)
+      crayons.bold! crayons.red! 'E '
+    }
+  )
+}
+
+// List of ships and size in game
+ships: list(
+  'Carrier' 5
+  'Battleship' 4
+  'Cruiser' 3
+  'Destroyer' 2
+  'Destroyer' 2
+  zip $ds.pair
+)
+
+// Generate empty grid
+emptyGrid: { v =>
+  ds.grid(10 10)
+  dup .fill($v)
+}
+
+// Generate random grid
+// i'll be honest, i wrote this like 6 years ago and have
+// no idea how it works anymore, so don't ask
+randomGrid: {
+  g: emptyGrid('.')
+  ($ships open until $empty do {
+    id: size
+    x: math.rand_range(1 10)
+    y: math.rand_range(1 10)
+    g.get($x - 1 $y - 1) = '.' then {ship =>
+      size: ship.tail
+      xc: 0
+      yc: 0
+      switch(math.rand_range(1 2)
+        1 {1 >xc}
+        2 {1 >yc}
+      )
+      ok: {x y =>
+        all($x > 0 $y > 0 $x < 11 $y < 11)
+        then {g.get($x - 1 $y - 1) = '.'}
+        else false
+      }
+      xi: $x yi: $y
+      all($size repeat {
+        ok($xi $yi)
+        $xi + $xc >xi
+        $yi + $yc >yi
+      })
+      then {
+        xi: $x yi: $y
+        $size repeat {
+          g.set($xi - 1 $yi - 1 str($id))
+          $xi + $xc >xi
+          $yi + $yc >yi
+        }
+      } else $ship
+    }
+  })
+  $g
+}
+
+// Player variables
+user: :{
+  myGrid: nil
+  yourGrid: emptyGrid('?')
+}
+
+opponent: :{
+  myGrid: randomGrid
+  yourGrid: emptyGrid('?')
+}
+
+// Initialise player grid, start game
+ready: {
+  randomGrid >user.myGrid
+  print('Generated player grid:')
+  print($user.myGrid grid_string)
+  print('Type \'again\' if you want a different grid')
+  print('Type \'ready\' if you are happy with this grid')
+  opts: list('again' 'ready')
+  until {
+    prompt('> ')
+    dup opts.contains(.)
+    then true
+    else {
+      print('Please enter either \'again\' or \'ready\'')
+      pop false
+    }
+  }
+  = 'again' then $ready else $play
+}
+
+// Function to show grids
+view: { player =>
+  me: list($player.myGrid grid_string .split('\n'))
+  you: list($player.yourGrid grid_string .split('\n'))
+
+  print(' ' 1 to 10 '    ' 1 to 10 join ' ')
+  2 to len($me) map {n =>
+    print(me.get($n - 1) '    ' you.get($n - 1) cat)
+  }
+}
+
+tailrec: {f => {f dup then $apply else $pop}}
+// Main game step
+play: tailrec! {
+  // Display user's view
+  view($user)
+
+  // Ask where to fire
+  print('Cap\'n, where should we fire next?')
+  co: prompt('> ')
+  xy: nil
+  $co != 'exit' then {
+    {
+      ds.pair(coord($co)) >xy
+      true
+    } catch { e =>
+      print('I could not understand that co-ordinate!')
+      print($e.message)
+      false
+    }
+    then {
+      // Perform firing
+      switch(fire($user $opponent $xy)
+        #hit 'Boom! Ship hit!'
+        #miss 'Sploosh! Nothing but water!'
+        #sink 'Boom! Boom! Ship down!'
+        #repeat 'You already fired there!'
+      ) print
+
+      // AI fire
+      switch(fire($opponent $user aiNextFire)
+        #hit 'Your opponent hit you!'
+        #miss 'Your opponent missed!'
+        #sink 'Your opponent sunk a ship!'
+        #repeat 'Your opponent fired at the same spot again!'
+      ) print
+      $play
+    } else $play
+  } else nil
+}
+
+can_fire: {me at =>
+  $me.yourGrid .get($at open map {- 1}) is '?'
+}
+
+// Fire upon a specific spot
+fire: {from target at =>
+  can_fire($from $at) not then {
+    #repeat
+  } else {
+    $target.myGrid .get($at open map {- 1}) >>v
+    $v = '.' then {
+      $from.yourGrid .set($at open map {- 1} '.')
+      $target.myGrid .set($at open map {- 1} 'm')
+      #miss
+    } else {
+      $from.yourGrid .set($at open map {- 1} 'x')
+      $target.myGrid .set($at open map {- 1} mkstr($v .chars + 5))
+      $target.myGrid .contains($v) then #hit else {
+        // replace all 'x' matching ship in from.yourGrid with 'o'
+        $target.myGrid .findall($v .chars + 5 mkstr)
+        zip $ds.pair // todo: i think this can be removed with below becoming fold
+        map {xy => $from.yourGrid .set($xy open 'o')}
+        #sink
+      }
+    }
+  }
+}
+
+// Determine next place for opponent to fire
+aiNextFire: {
+  // todo: make this intelligent
+  ds.pair(2 repeat {math.rand_range(1 10)})
+}
+
+?_main then {
+  splashmsg ready
+}
+
+// E5 E6 D6 C7 D7 E7 G4

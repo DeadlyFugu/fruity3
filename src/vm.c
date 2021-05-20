@@ -831,6 +831,23 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
                 if (!evalCall(vm, node, sub, NULL)) return false;
             }
         } break;
+        case SPC_FILTER: {
+            if (vm->stack->next == 0) return true;
+            Stack* base = vm->stack;
+            vm->stack = GC_MALLOC(sizeof(Stack));
+            *vm->stack = (Stack) { .previous = base->previous };
+            for (int i = 0; i < base->next; i++) {
+                Stack_push(vm->stack, base->values[i]);
+                if (!evalCall(vm, node, sub, NULL)) return false;
+                if (vm->stack->next == 0) {
+                    raiseUnderflow(vm, node, 1);
+                    return false;
+                }
+                if (isTruthy(Stack_pop(vm->stack))) {
+                    Stack_push(vm->stack, base->values[i]);
+                }
+            }
+        } break;
         case SPC_ZIP: {
             Stack* newStack = GC_MALLOC(sizeof(Stack));
             *newStack = (Stack) { .previous = vm->stack->previous };
@@ -935,6 +952,17 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
             }
             Stack_move(vm->stack->previous, vm->stack, n);
         } break;
+        case SPC_JOIN: {
+            // todo: define on vm
+            Symbol sJoin = Symbol_find("_join", 5);
+            Value* pfn = Context_get(getContext(vm, sub), sJoin);
+            if (pfn) {
+                if (!evalCall(vm, node, *pfn, &sub)) return false;
+            } else {
+                raiseUnbound2(vm, node, sJoin, sub);
+                return false;
+            }
+        } break;
         case SPC_REPEAT: {
             if (vm->stack->next == 0) {
                 raiseUnderflow(vm, node, 1);
@@ -950,6 +978,23 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
                 if (!evalCall(vm, node, sub, NULL)) return false;
             }
         } break;
+        case SPC_WITH: {
+            if (vm->stack->next == 0) {
+                raiseUnderflow(vm, node, 1);
+                return false;
+            }
+            Value v = Stack_pop(vm->stack);
+            // todo: define on vm
+            Symbol sWith = Symbol_find("_with", 5);
+            Value* pfn = Context_get(getContext(vm, v), sWith);
+            if (pfn) {
+                Stack_push(vm->stack, sub);
+                if (!evalCall(vm, node, *pfn, &sub)) return false;
+            } else {
+                raiseUnbound2(vm, node, sWith, sub);
+                return false;
+            }
+        } break;
         case SPC_CATCH: {
             if (vm->stack->next == 0) {
                 raiseUnderflow(vm, node, 1);
@@ -962,6 +1007,17 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
                 Context_bind(ex, vm->symMessage, FROM_STRING(vm->exMessage));
                 Context_bind(ex, vm->symTrace, FROM_LIST(genTraceList(vm)));
                 Stack_push(vm->stack, FROM_CONTEXT(ex));
+                if (!evalCall(vm, node, sub, NULL)) return false;
+            }
+        } break;
+        case SPC_AND: case SPC_OR: {
+            if (vm->stack->next == 0) {
+                raiseUnderflow(vm, node, 1);
+                return false;
+            }
+            Value body = vm->stack->values[vm->stack->next-1];
+            if (special == SPC_OR ? !isTruthy(body) : isTruthy(body)) {
+                vm->stack->next--;
                 if (!evalCall(vm, node, sub, NULL)) return false;
             }
         } break;

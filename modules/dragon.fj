@@ -29,6 +29,9 @@ add: {o => + $o}
 sub: {o => - $o}
 mul: {o => * $o}
 div: {o => / $o}
+pow: {o => ^ $o}
+mod: {o => % $o}
+divmod: {a b => $a / $b int $a % $b}
 
 // todo: should .tostr be the casting method instead?
 str: {dup ?._str then {._str} else $_builtin.valstr}
@@ -44,7 +47,7 @@ eval: {parse :{} apply}
 
 match: {f =>
     ?f.match then {dup f.match}
-    else {dup is $f or! {$f is default}}
+    else {dup is $f or {$f is default}}
 }
 
 apply: {f => f}
@@ -64,6 +67,11 @@ setv: $_builtin.setv
 bindv: $_builtin.bindv
 hasv: $_builtin.hasv
 refv: {:{self key =>} as $Reference}
+// todo: should lsv return all symbols (including parents)?
+//       have separate lsb hasb for directly bound vars?
+// todo: short form syntax for hasb? `??_foo`? can be used to
+//       distinguish protos from children by means of special _proto attrib?
+//       or is this just overly complex lol?
 lsv: $_builtin.lsv
 getp: $_builtin.getp
 setp: {b => as $b pop}
@@ -71,18 +79,18 @@ type: $_builtin.type
 
 bool: {then true else false}
 not: {then false else true}
-and: {a b => $a then $b else $a}
-or: {a b => $a then $a else $b}
+any: {reverse fold {a b => $b then $b else $a}}
+all: {reverse fold {a b => $b then $a else $b}}
 
 // todo: make a whole bunch of common methods underscore prefixed?
 // so `root int` etc. doesnt call int recursively
-int: {.int}
-float: {.float}
-// abs: {.abs}
+int: {._int}
+float: {._float}
+abs: {._abs}
 negate: {0 - ()}
 
-open: {.open}
-len: {.size}
+open: {._open}
+len: {._len}
 
 switch: {
     reverse >>val
@@ -91,18 +99,18 @@ switch: {
         // eval condition
         // dup type is #Closure
         // then {.apply($val)}
-        // else {k => $k is $val  or! {$k is default }}
+        // else {k => $k is $val  or {$k is default }}
         $val swap match swap pop
         // remove body if false
         dup else {swap pop}
         
-        or! $empty
+        or $empty
     }
     empty else {top apply}
 }
 chain: {
     reverse
-    until {empty or! $apply} do $pop
+    until {empty or $apply} do $pop
     empty else {top apply}
 }
 filter: {f => map {n => f($n) then $n}}
@@ -119,14 +127,15 @@ profile: {
     $end - $start
 }
 
-Number.float: {self}
-Number.int: {self 16 _builtin.math1}
+Number._float: {self}
+Number._int: {self 16 _builtin.math1}
 Number._eq: {is self}
 Number._visit: {.number(self)}
+Number._abs: {self < 0 then {self negate} else self}
 
-String.float: {self _builtin.strtof}
-String.int: {self _builtin.strtoi}
-String.open: {self _builtin.stropen}
+String._float: {self _builtin.strtof}
+String._int: {self _builtin.strtoi}
+String._open: {self _builtin.stropen}
 String.chars: {self _builtin.strunmk}
 // todo: some short form for `dup is X then {pop Y}`?
 //       X --> Y? X into Y?
@@ -147,20 +156,21 @@ String.quote: {_builtin.strcat('\'' self '\'')}
 String.split: {delim => self $delim _builtin.strsplit}
 // String.splitws
 // String.trim
-String.replace: {a b => ($a self.split join! $b)}
+String.replace: {a b => ($a self.split join $b)}
 String.drop: {n => self $n nil _builtin.strsub}
 String.droptail: {n => self 0 $n negate _builtin.strsub}
-String.startswith: {s => s.size negate self.droptail is $s}
-String.endswith: {s => s.size negate self.drop is $s}
+String.startswith: {s => s._len negate self.droptail is $s}
+String.endswith: {s => s._len negate self.drop is $s}
 String.upper: {self _builtin.strupper}
 String.lower: {self _builtin.strlower}
 String.isupper: {self _builtin.strisup}
 String.islower: {self _builtin.strislo}
-String.size: {self _builtin.strlen}
+String._len: {self _builtin.strlen}
 String._rep: {self _builtin.valstr}
 String._str: {self}
 String._visit: {.string(self)}
 String._eq: {is self}
+String._join: {map self empty else $pop cat}
 
 Symbol._eq: {is self}
 Symbol.name: {self str .drop(1)}
@@ -173,13 +183,13 @@ Closure._visit: {.closure($self)}
 Oddball._visit: {.oddball(self)}
 
 list: $_builtin.list
-List.open: {self _builtin.lstopen}
+List._open: {self _builtin.lstopen}
 List.push: {o => self $o _builtin.lstpush}
 List.pop: {self _builtin.lstpop}
 List.peek: {self -1 _builtin.lstget}
 List.get: {i => self $i _builtin.lstget}
 List.set: {i v => self $i $v _builtin.lstset}
-List.size: {self _builtin.lstsize}
+List._len: {self _builtin.lstsize}
 List.empty: {self _builtin.lstsize is 0}
 List.change: {self _builtin.lstchange}
 List.append: {size >>n (self _builtin.lstopen dot $n self _builtin.lstchange)}
@@ -193,27 +203,16 @@ List.insert: {i v => self.change(
     $v
     self.subopen($i nil)
 )}
-List.with: {f => self.change(self.open f)}
-List.find: {k =>
+List.with: {f => self.change(self._open f)}
+List.findall: {k =>
     i: 0
-    top(
-        self.open map {$k match swap pop then $i $i + 1 >i}
-        nil under
-    )
+    self._open map {$k match swap pop then $i $i + 1 >i}
+}
+List.find: {
+    top(. self.findall nil under)
 }
 List.contains: {v => self.find($v) is nil not}
 List._visit: {.list(self)}
-
-// todo: move pair elsewhere? ds?
-Pair: :{}
-pair: {head tail => this as $Pair}
-Pair._str: {cat('pair(' $self.head ' ' $self.tail ')')}
-Pair._visit: {.openable('pair' self)}
-Pair.open: {$self.head $self.tail}
-Pair.swap: {$self.tail $self.head pair}
-Pair.copy: {pair(self.open)}
-Pair.clone: {pair(self.open map {.clone})}
-Pair._eq: {o => $self.head = $o.head and! {$self.tail = $o.tail}}
 
 extend: { a b =>
     ($b lsv map {s => bindv($a $s $b $s getv)})
@@ -269,11 +268,11 @@ Reference.addlocal: {
 
 argparse: {
     a: :{}
-    until {empty or! {dup getp is $Argument not}}
-    do {bindv($a . .open)}
+    until {empty or {dup getp is $Argument not}}
+    do {bindv($a . open)}
     $a
 }
-Argument.open: {
+Argument._open: {
     $self.key $self.value
 }
 Argument._visit: {.argument(self)}

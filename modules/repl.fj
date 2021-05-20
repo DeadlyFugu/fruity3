@@ -2,14 +2,18 @@ import builtin
 import crayons
 
 print_stack: {
-    map $crayons.rep empty else {join! ' ' print}
+    map $crayons.rep empty else {join ' ' print}
 }
 
 Repl: :{}
 
 // Creates a new repl, useful for simulating repl behaviour
 Repl.new: {
-    :{ context: (:{ prev: {} } as root) }
+    :{ context: (:{
+        prev: {}
+        import math
+        import ds
+    } as root) }
     as $Repl
 }
 
@@ -28,7 +32,7 @@ Repl.minirepl: { f =>
         $line builtin.addhist
         out: nil
         {list(f($line)) >out} catch $print
-        $out then {print_stack(out.open)}
+        $out then {print_stack($out open)}
     }
     print! ''
 }
@@ -70,8 +74,8 @@ Repl.eval: {
         out: nil ex: nil
         {list(. $self.context builtin.evalin) >out} catch {dup >ex}
         $out then {
-            print_stack(out.open)
-            {out.open} >>self.context.prev
+            print_stack($out open)
+            {$out open} >>self.context.prev
         } else {
             print_ex($ex)
             {$ex} >>self.context.prev
@@ -83,7 +87,7 @@ Repl.eval: {
 Repl.run: {
     until {
         prompt! '> ' dup then {
-            dup builtin.addhist
+            dup dup len > 0 then $builtin.addhist else $pop
             dup self.eval
         }
         not

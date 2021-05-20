@@ -41,7 +41,6 @@ math.ceil: {15 builtin.math1}
 math.trunc: {16 builtin.math1}
 math.fract: {17 builtin.math1}
 math.sign: {18 builtin.math1}
-math.abs: {x => $x < 0 then {0 - $x} else $x}
 
 // -- Range Fns -- //
 math.lerp: {x y f => $f * ($y - $x) + $x}
@@ -51,7 +50,7 @@ math.saturate: {math.clamp(. 0 1)}
 math.range: {begin end step =>
     ($end <> $begin) * $step dup >step
     != 0 then {
-        $begin dup - $end math.abs / $step
+        $begin dup - $end abs / $step
         repeat {$begin + $step dup >begin}
     }
 }
@@ -66,6 +65,7 @@ math.median: {sort size / 2 math.floor repeat $pop top}
 
 // -- Random Fns -- //
 math.rand: {builtin.rand % 10,000 / 10,000}
+math.rand_range: {begin end => builtin.rand % ($end - $begin + 1) + $begin}
 
 // -- Floating Point -- //
 math.isnan: {19 builtin.math1 = 0}
@@ -84,10 +84,10 @@ Complex._mul: {other => math.complex(
     ($self.r * $other.r) - ($self.i * $other.i)
     ($self.r * $other.i) + ($self.i * $other.r)
 )}
-Complex.abs: {
+Complex._abs: {
     math.square($self.r) + math.square($self.i) math.sqrt
 }
-Complex.str: {
+Complex._str: {
     cat($self.r '+' $self.i 'i')
 }
 

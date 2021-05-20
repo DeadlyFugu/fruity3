@@ -25,7 +25,7 @@ asciify: {
 run: {
     math.range(-1 1 0.05) map {y =>
         print! cat(math.range(-2 0.5 0.0315) map {x =>
-            $x $y complex mandelbrot .abs >>v
+            $x $y complex mandelbrot abs >>v
             $v math.isnan
                 then ' '
                 else {$v / 2 math.saturate 1 swap sub asciify}

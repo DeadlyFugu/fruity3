@@ -1,0 +1,90 @@
+import builtin
+
+ds: :{}
+
+// Pair prototype
+ds.Pair: :{head: nil tail: nil}
+ds.Pair.new: {:{head tail =>} as $ds.Pair}
+ds.Pair._str: {cat('ds.pair(' $self.head ' ' $self.tail ')')}
+ds.Pair._visit: {.openable('ds.pair' self)}
+ds.Pair._open: {$self.head $self.tail}
+ds.Pair.swap: {$self.tail $self.head ds.pair}
+ds.Pair.copy: {ds.pair(self._open)}
+ds.Pair.clone: {ds.pair(self._open map {.clone})}
+ds.Pair._eq: {o => $self.head = $o.head and {$self.tail = $o.tail}}
+
+// Grid prototype
+ds.Grid: :{width: 0 height: 0 values: list()}
+ds.Grid.new: {
+    :{width height => values: list($width * $height repeat nil)}
+    as $ds.Grid
+    // todo: maybe 'new' special op would be better?
+    // e.g. g: new $ds.Grid g.width: 32 g.height: 64 ...
+    // then could maybe remove as and make parent immutable?
+    // maybe nah
+}
+ds.Grid.get: {x y =>
+    $y * $self.width + $x self.values.get
+}
+ds.Grid.set: {x y v =>
+    $y * $self.width + $x $v self.values.set
+}
+ds.Grid.row: {y =>
+    self.values.sub($self.width * $y dup + $self.width)
+}
+ds.Grid.column: {x =>
+    // todo: some get with stride method on list would be good
+    (0 to $self.height pop map {self.get($x .)})
+}
+ds.Grid.fill: {v =>
+    self.values.change($self.values len repeat $v)
+}
+ds.Grid.contains: {self.values.contains}
+ds.Grid.findall: {(
+    . self.values.findall map {$self.width divmod swap}
+)}
+ds.Grid._open: {$self.values open}
+// todo: how to show grid as string?
+
+ds.Dict: :{}
+ds.Dict.new: {
+  :{zip $ds.pair list >>l} as $ds.Dict
+}
+dict_get_pair: {d k => (
+    $d.l open filter {$.head = $k} empty then nil
+)}
+ds.Dict.get: {k =>
+    v: dict_get_pair(self $k)
+    $v then {$v.tail}
+    else {throw! cat('key ' rep($k) ' unbound in this dict')}
+}
+ds.Dict.touch: {k d =>
+    dict_get_pair(self $k) dup
+    else {pop ds.pair($k d) dup self.l.push}
+}
+ds.Dict.set: {k v =>
+    dict_get_pair(self $k) dup = nil
+    then {pop self.l.push(ds.pair($k $v))}
+    else {$v swap >._tail}
+}
+ds.Dict.entries: {$self.l open}
+ds.Dict.keys: {($self.l open map {$.head})}
+ds.Dict.values: {($self.l open map {$.tail})}
+ds.Dict._open: {($self.l open map $open)}
+ds.Dict._str: {cat('ds.dict(' ($self .entries map {p => cat($p.head ' -> ' $p.tail)} join '; ') ')')}
+ds.Dict._rep: {cat('ds.dict(' ($self open join ' ') ')')}
+ds.Dict._visit: {.openable('ds.dict' self)}
+
+// todo: in parser, check if tokens after end of parse still exist
+
+ds.pair: $ds.Pair.new
+ds.grid: $ds.Grid.new
+ds.dict: $ds.Dict.new
+
+ds.tally: {
+    d: ds.dict()
+    map {x => d.touch($x 0) dup $.tail + 1 swap >.tail}
+    $d
+}
+
+_export: $ds

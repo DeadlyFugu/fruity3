@@ -19,6 +19,16 @@ crayons.magenta: {35 wrap}
 crayons.cyan:    {36 wrap}
 crayons.white:   {37 wrap}
 
+crayons.bg: :{}
+crayons.bg.black:   {40 wrap}
+crayons.bg.red:     {41 wrap}
+crayons.bg.green:   {42 wrap}
+crayons.bg.yellow:  {43 wrap}
+crayons.bg.blue:    {44 wrap}
+crayons.bg.magenta: {45 wrap}
+crayons.bg.cyan:    {46 wrap}
+crayons.bg.white:   {47 wrap}
+
 rainbow: list(
     $crayons.red $crayons.yellow $crayons.green
     $crayons.cyan $crayons.blue $crayons.magenta)
@@ -31,7 +41,7 @@ colorizer.string: {rep crayons.green}
 colorizer.closure: $crayons.red // todo: impl
 colorizer.oddball: $crayons.yellow
 colorizer.list: {
-    (. open map $crayons.rep join! ' ')
+    (. open map $crayons.rep join ' ')
     cat(crayons.cyan! 'list' '(' . ')')
 }
 colorizer.context: { ctx => (
@@ -39,14 +49,14 @@ colorizer.context: { ctx => (
         crayons.red! cat(k.name ':')
         crayons.rep(getv($ctx $k))
     }
-    join! ' ' cat(':{' . '}')
+    join ' ' cat(':{' . '}')
 )}
 colorizer.argument: { a =>
     cat(crayons.yellow! cat('@' a.key.name) ' ' crayons.rep! $a.value)
 }
 // todo: ctor reference for openable would be preferable
 colorizer.openable: { swap >>ctor
-    cat(. open map $crayons.rep)
+    (. open map $crayons.rep join ' ')
     cat(crayons.cyan! $ctor '(' . ')')
 }
 colorizer.root: {pop crayons.yellow! 'root'}
@@ -83,10 +93,16 @@ _export: $crayons
 
     $crayons lsv
     // todo: fix filter and join
-    excluding: list(#reset #rep #heatmap)
-    filter! {excluding.contains not}
+    excluding: list(#reset #rep #heatmap #bg)
+    filter {excluding.contains not}
     sort map { k =>
         f: getv($crayons $k)
-        print! f('crayons.' k.name cat)
+        f('crayons.' k.name cat)
+        hasv($crayons.bg $k) then {
+            f: getv($crayons.bg $k)
+            f('crayons.bg.' k.name cat) crayons.black
+            cat(.. '\t' swap)
+        }
+        print
     }
 }

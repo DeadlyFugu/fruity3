@@ -9,11 +9,11 @@ opobjs: list(
 )
 
 // values for switch()
-opswitch: list(opobjs.open map {dup $.lexeme swap} default nil)
+opswitch: list($opobjs open map {dup $.lexeme swap} default nil)
 
 // convert lexeme -> operator
 opfind: {
-    switch(. opswitch.open)
+    switch(. $opswitch open)
 }
 
 funcs: list('sqrt')
@@ -35,10 +35,10 @@ shunting_yard: {
                 // todo: complex conditions might be easier with some module?
                 // e.g. ceval("a < b || (a == b && c < b)" @a 1 @b 2 @c 3)
                 // todo: use any
-                until {ops.empty or! {ops.peek is '(' or! {
+                until {ops.empty or {ops.peek is '(' or {
                     ops.peek $.prec >>oprec
                     // todo: below might be cleaner with then/else
-                    $oprec < $v.prec or! {$oprec = $v.prec and! {$v.assoc = #left}}
+                    $oprec < $v.prec or {$oprec = $v.prec and {$v.assoc = #left}}
                 }}} do {
                     output.push! ops.pop
                 }
@@ -70,13 +70,6 @@ shunting_yard: {
 
 sy2: {
     print(input eval2)
-}
-
-any: {
-    reverse fold {a b => $b then $b else $a}
-}
-all: {
-    reverse fold {a b => $b then $a else $b}
 }
 
 eval2: {
@@ -116,7 +109,7 @@ eval2: {
             }
         )
     }
-    (ops.open reverse map {$.fn})
+    ($ops open reverse map {$.fn})
     map $apply
 }
 
@@ -144,7 +137,7 @@ genexpr: { n =>
     _builtin.rand % 10
     $n repeat {
         // 25% chance of (
-        $depth > 0 and! {_builtin.rand % 4 = 0} then {
+        $depth > 0 and {_builtin.rand % 4 = 0} then {
             ')' $depth - 1 >depth
         }
         // choose random op
@@ -158,7 +151,7 @@ genexpr: { n =>
         _builtin.rand % 10
     }
     $depth repeat ')'
-    join! ' '
+    join ' '
 }
 
 runtest: {input eval2 list print(. .sub(0 5))}

@@ -183,8 +183,8 @@ void fpClassifyTokens(Parser* parser) {
             kind = TOK_MAP;
         } else if (length == 4 && strncmp(lexeme, "fold", length) == 0) {
             kind = TOK_FOLD;
-        // } else if (length == 6 && strncmp(lexeme, "filter", length) == 0) {
-        //     kind = TOK_FILTER;
+        } else if (length == 6 && strncmp(lexeme, "filter", length) == 0) {
+            kind = TOK_FILTER;
         } else if (length == 3 && strncmp(lexeme, "zip", length) == 0) {
             kind = TOK_ZIP;
         } else if (length == 2 && strncmp(lexeme, "is", length) == 0) {
@@ -203,6 +203,10 @@ void fpClassifyTokens(Parser* parser) {
             kind = TOK_WITH;
         } else if (length == 5 && strncmp(lexeme, "catch", length) == 0) {
             kind = TOK_CATCH;
+        } else if (length == 3 && strncmp(lexeme, "and", length) == 0) {
+            kind = TOK_AND_KEYWORD;
+        } else if (length == 2 && strncmp(lexeme, "or", length) == 0) {
+            kind = TOK_OR;
         } else if (length == 6 && strncmp(lexeme, "import", length) == 0) {
             kind = TOK_IMPORT;
         } else if (length == 4 && strncmp(lexeme, "this", length) == 0) {
@@ -815,7 +819,8 @@ AstNode* fpParseBody(Parser* parser, bool single) {
         } break;
         case TOK_MAP: case TOK_FOLD: case TOK_FILTER: case TOK_ZIP:
         case TOK_IS: case TOK_AS: case TOK_TO: case TOK_DOT:
-        case TOK_JOIN: case TOK_REPEAT: case TOK_WITH: case TOK_CATCH: {
+        case TOK_JOIN: case TOK_REPEAT: case TOK_WITH: case TOK_CATCH:
+        case TOK_AND_KEYWORD: case TOK_OR: {
             node->kind = AST_SPECIAL;
             node->as_int = tkind - TOK_MAP;
             node->sub = fpParseBody(parser, true);
