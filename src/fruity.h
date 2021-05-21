@@ -38,7 +38,7 @@ void* fpAllocData(u32 size);
 // c -> Context
 // f -> closure (Function)
 // l -> List
-// u -> bUffer
+// B -> Blob
 // v -> any type
 // ?X -> type X or nil (additional bool field for if set)
 // *X -> 0 or more repeats of X (where X is another type)

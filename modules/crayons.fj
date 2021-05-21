@@ -40,10 +40,8 @@ colorizer.symbol: $crayons.blue
 colorizer.string: {rep crayons.green}
 colorizer.closure: $crayons.red // todo: impl
 colorizer.oddball: $crayons.yellow
-colorizer.list: {
-    (. open map $crayons.rep join ' ')
-    cat(crayons.cyan! 'list' '(' . ')')
-}
+colorizer.list: {self.openable('list' .)}
+colorizer.blob: {self.openable('blob' .)}
 colorizer.context: { ctx => (
     $ctx lsv sort map { k =>
         crayons.red! cat(k.name ':')

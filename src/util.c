@@ -175,6 +175,13 @@ static bool extractValue(VM* vm, char kind, Value v, void* dst) {
             }
             *(Closure**) dst = GET_CLOSURE(v);
         } break;
+        case 'B': {
+            if (t != TYPE_BLOB) {
+                raiseType(vm, NULL, TYPE_BLOB);
+                return false;
+            }
+            *(Blob**) dst = v.as_blob;
+        } break;
         default: {
             assert(0 && "invalid sig char");
         }

@@ -113,7 +113,14 @@ const char* Value_repr(Value v, int depth) {
             strcat(buf, ")");
             return buf;
         }
-        case TYPE_BUFFER:
-            return "<not impl>";
+        case TYPE_BLOB:
+            // todo: proper impl
+            return gc_sprintf("blob(<%d bytes>)", v.as_blob->size);
     }
+}
+
+Value Value_makeBlob(int size, const u8* data) {
+    Blob* blob = GC_MALLOC(sizeof(Blob));
+    *blob = (Blob) { data, size };
+    return (Value) { TYPE_BLOB, .as_blob = blob };
 }

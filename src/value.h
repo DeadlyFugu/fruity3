@@ -11,6 +11,7 @@ typedef struct sValue Value;
 typedef struct sClosure Closure;
 typedef struct sNativeClosure NativeClosure;
 typedef struct sStack Stack;
+typedef struct sBlob Blob;
 
 typedef enum {
     TYPE_NUMBER,
@@ -20,7 +21,7 @@ typedef enum {
     TYPE_CONTEXT,
     TYPE_CLOSURE,
     TYPE_LIST,
-    TYPE_BUFFER // rename BLOB, immutable bytes like python?
+    TYPE_BLOB
 } Type;
 
 struct sValue {
@@ -33,7 +34,7 @@ struct sValue {
         Context* as_context;
         Closure* as_closure;
         Stack* as_list;
-        u8* as_buffer;
+        Blob* as_blob;
     };
 };
 
@@ -49,6 +50,11 @@ struct sNativeClosure {
     const char* symbolName;
 };
 
+struct sBlob {
+    const u8* data;
+    int size;
+};
+
 #define GET_TYPE(v) ((v).tag)
 #define GET_NUMBER(v) ((v).as_number)
 #define GET_SYMBOL(v) ((v).as_symbol)
@@ -57,6 +63,8 @@ struct sNativeClosure {
 #define GET_CONTEXT(v) ((v).as_context)
 #define GET_CLOSURE(v) ((v).as_closure)
 #define GET_LIST(v) ((v).as_list)
+#define GET_BLOB_SIZE(v) ((v).as_blob->size)
+#define GET_BLOB_DATA(v) ((v).as_blob->data)
 
 #define FROM_NUMBER(k) ((Value) { TYPE_NUMBER, .as_number = (k) })
 #define FROM_SYMBOL(k) ((Value) { TYPE_SYMBOL, .as_symbol = (k) })
@@ -74,3 +82,5 @@ struct sNativeClosure {
 #define VAL_NIL     ((Value) { TYPE_ODDBALL, .as_int = 3 })
 
 const char* Value_repr(Value v, int depth);
+
+Value Value_makeBlob(int size, const u8* data);

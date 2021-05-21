@@ -12,6 +12,10 @@ ds.Pair.swap: {$self.tail $self.head ds.pair}
 ds.Pair.copy: {ds.pair(self._open)}
 ds.Pair.clone: {ds.pair(self._open map {.clone})}
 ds.Pair._eq: {o => $self.head = $o.head and {$self.tail = $o.tail}}
+ds.Pair._cmp: {o =>
+    $self.head <> $o.head
+    dup = 0 then {pop $self.tail <> $o.tail}
+}
 
 // Grid prototype
 ds.Grid: :{width: 0 height: 0 values: list()}
@@ -85,6 +89,21 @@ ds.tally: {
     d: ds.dict()
     map {x => d.touch($x 0) dup $.tail + 1 swap >.tail}
     $d
+}
+
+ds.sortby: { f =>
+    map {:{>>v} dup ._cmp: {$.v $self.v swap f}}
+    sort
+    map {$.v}
+}
+
+ds.sortkey: { k =>
+    switch($k type
+        #Symbol {{a b => getv($a $k) <> getv($b $k)}}
+        #Closure {{a b => k($a) <> k($b)}}
+        default {throw! 'expected symbol or closure'}
+    )
+    ds.sortby
 }
 
 _export: $ds

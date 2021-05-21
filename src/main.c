@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
     if (useFallback && runKind != 0) {
         printf("warning: ignoring -f option\n");
     }
-    if (runKind == 0 && !useFallback) {
+    if (runKind == 0 && !useFallback && !isFreestanding) {
         runKind = 4;
     }
 

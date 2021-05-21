@@ -115,6 +115,7 @@ bool builtin_type(VM* vm) {
     Value v;
     // todo: string-or-symbol char in extract?
     if (!fpExtract(vm, "v", &v)) return false;
+    // todo: store interned type symbols on vm
     switch (GET_TYPE(v)) {
         case TYPE_NUMBER: fpPush(vm, FROM_SYMBOL(fpIntern("Number"))); break;
         case TYPE_SYMBOL: fpPush(vm, FROM_SYMBOL(fpIntern("Symbol"))); break;
@@ -123,7 +124,7 @@ bool builtin_type(VM* vm) {
         case TYPE_CONTEXT: fpPush(vm, FROM_SYMBOL(fpIntern("Context"))); break;
         case TYPE_CLOSURE: fpPush(vm, FROM_SYMBOL(fpIntern("Closure"))); break;
         case TYPE_LIST: fpPush(vm, FROM_SYMBOL(fpIntern("List"))); break;
-        case TYPE_BUFFER: fpPush(vm, FROM_SYMBOL(fpIntern("Buffer"))); break;
+        case TYPE_BLOB: fpPush(vm, FROM_SYMBOL(fpIntern("Blob"))); break;
     }
     return true;
 }
@@ -752,6 +753,397 @@ bool builtin_sysctl(VM* vm) {
     return true;
 }
 
+bool builtin_strblob(VM* vm) {
+    const char* str;
+    if (!fpExtract(vm, "s", &str)) return false;
+    int len = strlen(str);
+    fpPush(vm, Value_makeBlob(len, (const u8*) str));
+    return true;
+}
+
+bool builtin_blobcat(VM* vm) {
+    Blob* b1, *b2;
+    if (!fpExtract(vm, "BB", &b1, &b2)) return false;
+    int newLen = b1->size + b2->size;
+    u8* newData = GC_MALLOC(newLen);
+    memcpy(newData, b1->data, b1->size);
+    memcpy(newData + b1->size, b2->data, b2->size);
+    fpPush(vm, Value_makeBlob(newLen, newData));
+    return true;
+}
+
+bool builtin_blobopen(VM* vm) {
+    Blob* b;
+    if (!fpExtract(vm, "B", &b)) return false;
+    for (int i = 0; i < b->size; i++) {
+        fpPush(vm, FROM_NUMBER(b->data[i]));
+    }
+    return true;
+}
+
+bool builtin_blobmk(VM* vm) {
+    int len;
+    int* bytes;
+    if (!fpExtract(vm, "*i", &len, &bytes)) return false;
+    u8* data = GC_MALLOC(len);
+    for (int i = 0; i < len; i++) {
+        data[i] = bytes[i];
+    }
+    fpPush(vm, Value_makeBlob(len, data));
+    return true;
+}
+
+bool builtin_blobsub(VM* vm) {
+    Blob* blob;
+    bool hasBegin, hasEnd;
+    int begin, end;
+    if (!fpExtract(vm, "B?i?i",
+        &blob, &hasBegin, &begin, &hasEnd, &end)) return false;
+    int len = blob->size;
+    if (!hasBegin) begin = 0;
+    if (begin < 0) begin += len;
+    if (!hasEnd) end = len;
+    if (end < 0) end += len;
+    if (begin < 0 || end < 0 || end < begin || begin > len || end > len) {
+        // todo: separate #bounds exception type?
+        fpRaiseInvalid(vm, "out of bounds");
+        return false;
+    }
+    int newLen = end - begin;
+    u8* newData = GC_MALLOC(newLen);
+    memcpy(newData, blob->data + begin, newLen);
+    fpPush(vm, Value_makeBlob(newLen, newData));
+    return true;
+}
+
+bool builtin_bloblen(VM* vm) {
+    Blob* blob;
+    if (!fpExtract(vm, "B", &blob)) return false;
+    fpPush(vm, fpFromDouble(blob->size));
+    return true;
+}
+
+// todo: maybe move blob encoding/decoding logic to util?
+
+static bool blobFmtCalc(VM* vm, const char* fmt, int* p_offs, int* p_size) {
+    int offs = 0;
+    int size = 0;
+    int mod = 0;
+    for (int i = 0; fmt[i]; i++) {
+        char c = fmt[i];
+        if (c >= '0' && c <= '9') {
+            mod = mod * 10 + (c - '0');
+        } else switch (c) {
+            case 's': case 'S':
+                if (mod == 0) {
+                    fpRaiseInvalid(vm, "invalid encode format (string needs size)");
+                    return false;
+                }
+                offs++; size += mod; mod = 0; break;
+            case 'x':
+                if (mod == 0) mod = 1;
+                size += mod; mod = 0; break;
+            case 'b': case 'B':
+                if (mod == 0) mod = 1;
+                offs += mod; size += mod; mod = 0; break;
+            case 'h': case 'H':
+                if (mod == 0) mod = 1;
+                offs += mod; size += mod * 2; mod = 0; break;
+            case 'i': case 'I': case 'f':
+                if (mod == 0) mod = 1;
+                offs += mod; size += mod * 4; mod = 0; break;
+            case 'd':
+                if (mod == 0) mod = 1;
+                offs += mod; size += mod * 8; mod = 0; break;
+            default:
+                fpRaiseInvalid(vm, "invalid encode format (invalid char)");
+                return false;
+        }
+    }
+    if (mod != 0) {
+        fpRaiseInvalid(vm, "invalid encode format (number at end)");
+        return false;
+    }
+    *p_offs = offs; *p_size = size;
+    return true;
+}
+
+bool builtin_blobenc(VM* vm) {
+    const char* fmt;
+    if (!fpExtract(vm, "s", &fmt)) return false;
+
+    // calculate stack offset to start from and buf size
+    int offs = 0;
+    int size = 0;
+    if (!blobFmtCalc(vm, fmt, &offs, &size)) return false;
+    if (vm->stack->next < offs) {
+        fpRaiseUnderflow(vm, offs);
+        return false;
+    }
+
+    // process format chars
+    int mod = 0;
+    int pos = vm->stack->next - offs;
+    u8* out = GC_MALLOC(size);
+    memset(out, 0, size);
+    int out_offs = 0;
+    for (int i = 0; fmt[i]; i++) {
+        char c = fmt[i];
+        if (c >= '0' && c <= '9') {
+            mod = mod * 10 + (c - '0');
+        } else switch (c) {
+            case 's': {
+                Value v = vm->stack->values[pos++];
+                if (GET_TYPE(v) != TYPE_STRING) {
+                    fpRaiseType(vm, TYPE_STRING);
+                    return false;
+                }
+                const char* str = GET_STRING(v);
+                strncpy((char*) out + out_offs, str, mod);
+                out_offs += mod; mod = 0;
+            } break;
+            case 'S': {
+                Value v = vm->stack->values[pos++];
+                if (GET_TYPE(v) != TYPE_BLOB) {
+                    fpRaiseType(vm, TYPE_BLOB);
+                    return false;
+                }
+                int len = GET_BLOB_SIZE(v);
+                if (mod < len) len = mod;
+                memcpy(out + out_offs, GET_BLOB_DATA(v), len);
+                out_offs += mod; mod = 0;
+            } break;
+            case 'x': {
+                if (mod == 0) mod = 1;
+                out_offs += mod; mod = 0;
+            } break;
+            case 'b': case 'B': {
+                if (mod == 0) mod = 1;
+                for (int i = 0; i < mod; i++) {
+                    Value v = vm->stack->values[pos++];
+                    if (GET_TYPE(v) != TYPE_NUMBER) {
+                        fpRaiseType(vm, TYPE_NUMBER);
+                        return false;
+                    }
+                    out[out_offs + i] = (int) GET_NUMBER(v);
+                }
+                out_offs += mod; mod = 0;
+            } break;
+            case 'h': case 'H': {
+                if (mod == 0) mod = 1;
+                for (int i = 0; i < mod; i++) {
+                    Value v = vm->stack->values[pos++];
+                    if (GET_TYPE(v) != TYPE_NUMBER) {
+                        fpRaiseType(vm, TYPE_NUMBER);
+                        return false;
+                    }
+                    if (c == 'h') {
+                        ((int16_t*)&out[out_offs])[i] = (int16_t) GET_NUMBER(v);
+                    } else {
+                        ((u16*)&out[out_offs])[i] = (u16) GET_NUMBER(v);
+                    }
+                }
+                out_offs += mod * 2; mod = 0;
+            } break;
+            case 'i': case 'I': case 'f': {
+                if (mod == 0) mod = 1;
+                for (int i = 0; i < mod; i++) {
+                    Value v = vm->stack->values[pos++];
+                    if (GET_TYPE(v) != TYPE_NUMBER) {
+                        fpRaiseType(vm, TYPE_NUMBER);
+                        return false;
+                    }
+                    if (c == 'i') {
+                        ((int32_t*)&out[out_offs])[i] = (int32_t) GET_NUMBER(v);
+                    } else if (c == 'I') {
+                        ((u32*)&out[out_offs])[i] = (u32) GET_NUMBER(v);
+                    } else {
+                        ((float*)&out[out_offs])[i] = (float) GET_NUMBER(v);
+                    }
+                }
+                out_offs += mod * 4; mod = 0;
+            } break;
+            case 'd': {
+                if (mod == 0) mod = 1;
+                for (int i = 0; i < mod; i++) {
+                    Value v = vm->stack->values[pos++];
+                    if (GET_TYPE(v) != TYPE_NUMBER) {
+                        fpRaiseType(vm, TYPE_NUMBER);
+                        return false;
+                    }
+                    ((double*)&out[out_offs])[i] = (double) GET_NUMBER(v);
+                }
+                out_offs += mod * 8; mod = 0;
+            } break;
+        }
+    }
+
+    vm->stack->next -= offs;
+    fpPush(vm, Value_makeBlob(size, out));
+
+    return true;
+}
+
+bool builtin_blobdec(VM* vm) {
+    Blob* blob;
+    const char* fmt;
+    if (!fpExtract(vm, "Bs", &blob, &fmt)) return false;
+
+    int len = blob->size;
+    const u8* data = blob->data;
+    int offs = 0;
+    int size = 0;
+    blobFmtCalc(vm, fmt, &offs, &size);
+    if (size != len) {
+        fpRaiseInvalid(vm, "blob size does not match format");
+        return false;
+    }
+
+    int mod = 0;
+    int head = 0;
+    for (int i = 0; fmt[i]; i++) {
+        char c = fmt[i];
+        if (c >= '0' && c <= '9') {
+            mod = mod * 10 + (c - '0');
+            continue;
+        } else {
+            if (mod == 0) mod = 1;
+            switch (c) {
+                case 'x': {
+                    head += mod;
+                } break;
+                case 's': {
+                    const char* str = GC_strndup((const char*) data+head, mod);
+                    fpPush(vm, fpFromString(str));
+                    head += mod;
+                } break;
+                case 'S': {
+                    u8* data2 = GC_MALLOC(mod);
+                    memcpy(data2, data + head, mod);
+                    fpPush(vm, Value_makeBlob(mod, data2));
+                    head += mod;
+                } break;
+                case 'b': {
+                    for (int i = 0; i < mod; i++) {
+                        int v = ((u8*)&data[head])[i];
+                        fpPush(vm, fpFromDouble(v));
+                    } head += mod;
+                } break;
+                case 'B': {
+                    for (int i = 0; i < mod; i++) {
+                        int v = ((int8_t*)&data[head])[i];
+                        fpPush(vm, fpFromDouble(v));
+                    } head += mod;
+                } break;
+                case 'h': {
+                    for (int i = 0; i < mod; i++) {
+                        int v = ((u16*)&data[head])[i];
+                        fpPush(vm, fpFromDouble(v));
+                    } head += mod * 2;
+                } break;
+                case 'H': {
+                    for (int i = 0; i < mod; i++) {
+                        int v = ((int16_t*)&data[head])[i];
+                        fpPush(vm, fpFromDouble(v));
+                    } head += mod * 2;
+                } break;
+                case 'i': {
+                    for (int i = 0; i < mod; i++) {
+                        u32 v = ((u32*)&data[head])[i];
+                        fpPush(vm, fpFromDouble(v));
+                    } head += mod * 4;
+                } break;
+                case 'I': {
+                    for (int i = 0; i < mod; i++) {
+                        int v = ((int32_t*)&data[head])[i];
+                        fpPush(vm, fpFromDouble(v));
+                    } head += mod * 4;
+                } break;
+                case 'f': {
+                    for (int i = 0; i < mod; i++) {
+                        float v = ((float*)&data[head])[i];
+                        fpPush(vm, fpFromDouble(v));
+                    } head += mod * 4;
+                } break;
+                case 'd': {
+                    for (int i = 0; i < mod; i++) {
+                        // todo: if nan tagging is ever used,
+                        // need to change this here to check for nans
+                        double d = ((double*)&data[head])[i];
+                        fpPush(vm, fpFromDouble(d));
+                    } head += mod * 4;
+                } break;
+            }
+            mod = 0;
+        }
+    }
+    return true;
+}
+
+bool builtin_read(VM* vm) {
+    const char* path;
+    if (!fpExtract(vm, "s", &path)) return false;
+    FILE* f = fopen(path, "r");
+    if (!f) {
+        // todo: better type than #invalid (#io?)
+        fpRaiseInvalid(vm, "file not found");
+        return false;
+    }
+    fseek(f, 0, SEEK_END);
+    int size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char* buffer = GC_MALLOC(size + 1);
+    if (fread(buffer, size, 1, f) != 1) {
+        fclose(f);
+        // todo: better type than #invalid (#io?)
+        fpRaiseInvalid(vm, "error reading file");
+        return false;
+    }
+    buffer[size] = 0;
+    fclose(f);
+    fpPush(vm, fpFromString(buffer));
+    return true;
+}
+
+bool builtin_write(VM* vm) {
+    const char* path;
+    const char* str;
+    if (!fpExtract(vm, "ss", &path, &str)) return false;
+    FILE* f = fopen(path, "w");
+    if (!f) {
+        // todo: better type than #invalid (#io?)
+        fpRaiseInvalid(vm, "could not open file");
+        return false;
+    }
+    if (fwrite(str, strlen(str), 1, f) != 1) {
+        fclose(f);
+        // todo: better type than #invalid (#io?)
+        fpRaiseInvalid(vm, "error writing file");
+        return false;
+    }
+    fclose(f);
+    return true;
+}
+
+#include <dirent.h>
+bool builtin_dir(VM* vm) {
+    const char* path;
+    if (!fpExtract(vm, "s", &path)) return false;
+    DIR* d = opendir(path);
+    if (!d) {
+        // todo: better type than #invalid (#io?)
+        fpRaiseInvalid(vm, "could not open directory");
+        return false;
+    }
+    while (1) {
+        struct dirent* de = readdir(d);
+        if (!de) break;
+        fpPush(vm, fpFromString(GC_strdup(de->d_name)));
+    }
+    closedir(d);
+    return true;
+}
+
 bool builtin_test(VM* vm) {
     int n;
     int* ns;
@@ -828,6 +1220,17 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(parse);
     REGISTER(evalin);
     REGISTER(sysctl);
+    REGISTER(strblob);
+    REGISTER(blobcat);
+    REGISTER(blobopen);
+    REGISTER(blobmk);
+    REGISTER(blobsub);
+    REGISTER(bloblen);
+    REGISTER(blobenc);
+    REGISTER(blobdec);
+    REGISTER(read);
+    REGISTER(write);
+    REGISTER(dir);
     REGISTER(test);
     return true;
 }

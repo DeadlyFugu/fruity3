@@ -1,0 +1,18 @@
+
+import builtin
+
+files: :{}
+
+files.read: $builtin.read
+files.write: $builtin.write
+files.ls: {
+    (. builtin.dir filter {.get(0) != '.'})
+}
+
+files.join: {
+    filter {len > 0}
+    map {s => $s dup .endswith! '/' else '/'} cat
+    dup len > 1 then {.droptail(1)}
+}
+
+_export: $files

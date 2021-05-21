@@ -8,6 +8,7 @@ import builtin as _builtin
 {} _builtin.getp >>Closure
 nil _builtin.getp >>Oddball
 _builtin.list _builtin.getp >>List
+'' _builtin.blobenc _builtin.getp >>Blob
 @a 1 _builtin.getp >>Argument
 {.} catch {} _builtin.getp >>Exception
 &x _builtin.getp >>Reference
@@ -165,6 +166,7 @@ String.upper: {self _builtin.strupper}
 String.lower: {self _builtin.strlower}
 String.isupper: {self _builtin.strisup}
 String.islower: {self _builtin.strislo}
+String.blob: {self _builtin.strblob}
 String._len: {self _builtin.strlen}
 String._rep: {self _builtin.valstr}
 String._str: {self}
@@ -213,6 +215,18 @@ List.find: {
 }
 List.contains: {v => self.find($v) is nil not}
 List._visit: {.list(self)}
+
+Blob.decode: {self swap _builtin.blobdec}
+Blob.sub: {begin end => self $begin $end _builtin.blobsub}
+Blob.hex: {mkstr(
+    hexdigit: {dup >= 10 then {- 10 + char('a')} else {+ char('0')}}
+    self open map {16 divmod hexdigit swap hexdigit swap}
+)}
+Blob._visit: {.blob(self)}
+Blob._open: {self _builtin.blobopen}
+// todo: decode from hex string if provided?
+blob: $_builtin.blobmk
+encode: $_builtin.blobenc
 
 extend: { a b =>
     ($b lsv map {s => bindv($a $s $b $s getv)})
