@@ -19,6 +19,7 @@ struct sModuleInfo {
     const char* filename;
 };
 
+void Module_addPath(const char* path);
 bool Module_import(VM* vm, const char* name, bool main);
 bool Module_fromFile(VM* vm, const char* path, bool main);
 // ModuleInfo* Module_fromString(VM* vm,

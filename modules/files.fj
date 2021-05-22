@@ -15,4 +15,11 @@ files.join: {
     dup len > 1 then {.droptail(1)}
 }
 
+Path: :{}
+Path.new: {:{str >>s} as $Path}
+Path._div: {Path.new($self.s . files.join)}
+Path._str: {$self.s}
+files.path: $Path.new
+files.mkdir: $builtin.mkdir
+
 _export: $files

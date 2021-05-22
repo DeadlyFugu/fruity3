@@ -42,7 +42,7 @@ static const char* opNames[] = {
     "_add", "_sub", "_mul", "_div",
     "_eq", "_neq", "_lt", "_gt", "_lteq", "_gteq",
     "_pow", "_mod", "_ltlt", "_gtgt", "_and", "_or",
-    "_addadd", "_subsub", "_mulmul", "_divmod"
+    "_addadd", "_subsub", "_mulmul", "_divmod", "_cmp"
 };
 
 static const char* exNames[] = {
@@ -57,7 +57,7 @@ void VM_startup(VM* vm) {
     // todo: have these pre-initialized to fixed indices?
     vm->symSelf = Symbol_find("self", 4);
     vm->symThis = Symbol_find("this", 4);
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 21; i++) {
         vm->symOps[i] = Symbol_find(opNames[i], strlen(opNames[i]));
     }
     for (int i = 0; i < 5; i++) {

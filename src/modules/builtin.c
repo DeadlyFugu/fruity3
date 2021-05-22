@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <gc/gc.h>
 #include <stdint.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <math.h>
 #include <readline/readline.h>
@@ -422,6 +423,22 @@ bool builtin_strunesc(VM* vm) {
     const char* str;
     if (!fpExtract(vm, "s", &str)) return false;
     fpPush(vm, fpFromString(fpStringUnescape(str, INT32_MAX)));
+    return true;
+}
+
+bool builtin_strtrim(VM* vm) {
+    const char* str;
+    if (!fpExtract(vm, "s", &str)) return false;
+    int len = strlen(str);
+    int end = len;
+    while (end > 0 && strchr(" \r\n\t\f\v", str[end-1])) end--;
+    int begin = 0;
+    while (begin < end && strchr(" \r\n\t\f\v", str[begin])) begin++;
+    if (end == len) {
+        fpPush(vm, fpFromString(str + begin));
+    } else {
+        fpPush(vm, fpFromString(GC_strndup(str + begin, end - begin)));
+    }
     return true;
 }
 
@@ -1144,6 +1161,163 @@ bool builtin_dir(VM* vm) {
     return true;
 }
 
+bool builtin_mkdir(VM* vm) {
+    const char* path;
+    if (!fpExtract(vm, "s", &path)) return false;
+    // todo: throw if mkdir fails
+    mkdir(path, 0775);
+    return true;
+}
+
+static Symbol astKindSym[26];
+static const char* astKindStr[] = {
+    "number", "symbol", "string", "oddball",
+    "closure", "object",
+    "callv", "getv", "setv", "bindv",
+    "hasv", "refv",
+    "prebind", "precall", "precall_bare", "operator",
+    "argument",
+    "group",
+    "dots",
+    "then_else", "until_do",
+    "special", "primitive", "import", "this", "sigbind"
+};
+static Symbol astSpcSym[14];
+static const char* astSpcStr[] = {
+    "map", "fold", "filter", "zip",
+    "is", "as", "to", "dot",
+    "join", "repeat", "with", "catch",
+    "and", "or"
+};
+
+static Symbol symKind, symSub, symValue, symHead, symTail;
+
+static void pushDisasm(VM* vm, AstNode* node) {
+    if (!node) return;
+    // todo: do we want some Unit parent ctx?
+    Context* ctx = Context_create(NULL);
+    Context_bind(ctx, symKind, FROM_SYMBOL(astKindSym[node->kind]));
+    // Context_bind(ctx, symBegin, FROM_NUMBER(node->pos.begin));
+    // Context_bind(ctx, symEnd, FROM_NUMBER(node->pos.end));
+    Value v;
+    bool hasVal = true, hasSub = false;
+    Symbol sval = symValue, ssub = symSub;
+    switch (node->kind) {
+        case AST_NUMBER:
+            v = FROM_NUMBER(node->as_number); break;
+        case AST_ARGUMENT:
+            hasSub = true;
+        case AST_SYMBOL:
+        case AST_SIGBIND:
+            v = FROM_SYMBOL(node->as_symbol); break;
+        case AST_ODDBALL:
+            v = FROM_ODDBALL(node->as_int); break;
+        case AST_SPECIAL:
+            hasSub = true;
+            v = FROM_SYMBOL(astSpcSym[node->as_int]); break;
+        case AST_PRIMITIVE: assert(0); break;
+        case AST_OPERATOR:
+            hasSub = true;
+            v = FROM_SYMBOL(vm->symOps[node->as_int]); break;
+        case AST_DOTS:
+            v = FROM_NUMBER(node->as_int); break;
+        case AST_STRING:
+            v = FROM_STRING(node->as_string); break;
+        case AST_IMPORT:
+        case AST_PREBIND:
+        case AST_PRECALL:
+        case AST_PRECALL_BARE:
+            hasSub = true;
+        case AST_CALLV:
+        case AST_GETV:
+        case AST_SETV:
+        case AST_BINDV:
+        case AST_HASV:
+        case AST_REFV: {
+            AstChainElem* curr = node->as_chain;
+            fpBeginList(vm);
+            while (curr) {
+                if (curr->symbol != (Symbol) -1) {
+                    fpPush(vm, fpFromSymbol(curr->symbol));
+                } else {
+                    fpPush(vm, fpDefault);
+                }
+                curr = curr->next;
+            }
+            fpEndList(vm);
+            v = fpPop(vm);
+        } break;
+        case AST_THEN_ELSE: case AST_UNTIL_DO:
+            ssub = symHead; sval = symTail;
+            hasSub = true;
+            fpBeginList(vm);
+            pushDisasm(vm, node->as_node);
+            if (vm->stack->next == 0) hasVal = false;
+            fpEndList(vm);
+            v = fpPop(vm); break;
+        case AST_CLOSURE:
+        case AST_OBJECT:
+        case AST_GROUP:
+            hasSub = true;
+            hasVal = false; break;
+        case AST_THIS:
+            hasVal = false; break;
+        default: assert(0);
+    }
+    if (hasVal) Context_bind(ctx, sval, v);
+    if (hasSub) {
+        fpBeginList(vm);
+        pushDisasm(vm, node->sub);
+        if (vm->stack->next == 0 && ssub != symSub) {
+            hasSub = false;
+        }
+        fpEndList(vm);
+        Value vsub = fpPop(vm);
+        // todo: this below if can probably be removed now
+        if (node->kind == AST_IMPORT) {
+            Stack* s = GET_LIST(vsub);
+            if (s->next != 0) {
+                Context* c = GET_CONTEXT(s->values[0]);
+                s = GET_LIST(*Context_get(c, symValue));
+                Context_bind(ctx, astSpcSym[5], s->values[0]);
+            }
+        } else if (hasSub) {
+            Context_bind(ctx, ssub, vsub);
+        }
+    }
+
+    fpPush(vm, FROM_CONTEXT(ctx));
+    pushDisasm(vm, node->next);
+}
+
+bool builtin_disasm(VM* vm) {
+    // todo: move lookup elsewhere
+    static bool resolvedSyms = false;
+    if (!resolvedSyms) {
+        for (int i = 0; i < 26; i++) {
+            astKindSym[i] = fpIntern(astKindStr[i]);
+        }
+        for (int i = 0; i < 14; i++) {
+            astSpcSym[i] = fpIntern(astSpcStr[i]);
+        }
+        symKind = fpIntern("kind");
+        symSub = fpIntern("sub");
+        symValue = fpIntern("value");
+        symHead = fpIntern("head");
+        symTail = fpIntern("tail");
+        resolvedSyms = true;
+    }
+
+    Closure* f;
+    if (!fpExtract(vm, "f", &f)) return false;
+    if (!f->binding) {
+        fpRaiseInvalid(vm, "cannot disasm native closure");
+        return false;
+    }
+    pushDisasm(vm, f->node);
+    return true;
+}
+
 bool builtin_test(VM* vm) {
     int n;
     int* ns;
@@ -1199,6 +1373,7 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(strislo);
     REGISTER(stresc);
     REGISTER(strunesc);
+    REGISTER(strtrim);
     REGISTER(clock);
     REGISTER(gccollect);
     REGISTER(gcdump);
@@ -1231,6 +1406,8 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(read);
     REGISTER(write);
     REGISTER(dir);
+    REGISTER(mkdir);
+    REGISTER(disasm);
     REGISTER(test);
     return true;
 }

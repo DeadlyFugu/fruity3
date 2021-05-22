@@ -38,7 +38,11 @@ colorizer: :{}
 colorizer.number: $crayons.yellow
 colorizer.symbol: $crayons.blue
 colorizer.string: {rep crayons.green}
-colorizer.closure: $crayons.red // todo: impl
+colorizer.closure: { f =>
+    safe! {$f disasm}
+    then {map {self.unit} join ' ' cat('{' . '}')}
+    else {crayons.faint! '<native closure>'}
+}
 colorizer.oddball: $crayons.yellow
 colorizer.list: {self.openable('list' .)}
 colorizer.blob: {self.openable('blob' .)}
@@ -58,6 +62,57 @@ colorizer.openable: { swap >>ctor
     cat(crayons.cyan! $ctor '(' . ')')
 }
 colorizer.root: {pop crayons.yellow! 'root'}
+colorizer.unit: { u =>
+    _chain: {(
+        . open map {
+            dup is default then {pop ''} else {.name}
+        } join '.'
+    )}
+    _list: {(
+        . open map {self.unit} join ' '
+    )}
+    _opstr: {switch(.
+        #_add '+' #_sub '-' #_mul '*' #_div '/' #_pow '^' #_mod '%'
+        #_eq '=' #_neq '!=' #_lt '<' #_gt '>' #_lteq '<=' #_gteq '>='
+        #_cmp '<>'
+        default {throw! 'unrecognised operator'}
+    )}
+    _c: $crayons
+    cat(switch($u.kind
+        #number {$u.value self.number}
+        #symbol {$u.value self.symbol}
+        #string {$u.value self.string}
+        #oddball {$u.value self.oddball}
+        #closure {'{' $u.sub _list '}'}
+        #object {':{' $u.sub _list '}'}
+        #callv {$u.value _chain _c.cyan}
+        #getv {'$' $u.value _chain cat _c.red}
+        #setv {'>' $u.value _chain cat _c.red}
+        #bindv {'>>' $u.value _chain cat _c.red}
+        #hasv {'?' $u.value _chain cat _c.red}
+        #refv {'&' $u.value _chain cat _c.red}
+        #prebind {$u.value _chain ':' cat _c.red ' ' $u.sub _list}
+        #precall {$u.value _chain _c.cyan '(' $u.sub _list ')'}
+        #precall_bare {$u.value _chain '!' cat _c.magenta ' ' $u.sub _list}
+        #operator {$u.value _opstr _c.magenta ' ' $u.sub _list}
+        #argument {'@' $u.value .name _c.yellow ' ' $u.sub _list}
+        #group {'(' $u.sub _list ')'}
+        #dots {$u.value repeat '.' cat _c.magenta}
+        #then_else {(
+            ?u.head then {'then' _c.magenta $u.head _list}
+            ?u.tail then {'else' _c.magenta $u.tail _list} join ' ')}
+        #until_do {(
+            ?u.head then {'until' _c.magenta $u.head _list}
+            ?u.tail then {'do' _c.magenta $u.tail _list} join ' ')}
+        #special {$u.value .name _c.magenta ' ' $u.sub _list}
+        #import {
+            'import' _c.magenta $u.value _chain _c.red
+            ?u.as then {'as' _c.magenta u.as.name _c.red} join ' '}
+        #this {'this' _c.yellow}
+        #sigbind {'<sigbind ' u.value.name '>' cat _c.faint}
+        default {throw! 'unrecognised ast node kind'}
+    ))
+}
 
 // todo: if passed a parent object (e.g. String or Argument) it will
 //       call the visit method on it. is there any way to distinguish

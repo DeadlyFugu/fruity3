@@ -1,0 +1,123 @@
+
+import files
+
+kiwi: :{}
+
+kiwi.KiwiContext: :{
+}
+kiwi.KiwiContext._add: { other =>
+  new: :{}
+  setp($new $kiwi.KiwiContext)
+  ($self $other map { ctx =>
+    (lsv($ctx) map {key => bindv($new $key getv($ctx $key))})
+  })
+  $new
+}
+
+kiwi.ctx_base: (:{
+  lb: '['
+  rb: ']'
+} as $kiwi.KiwiContext)
+
+wrap_xml: {tag =>
+  head: tail: tag.splitfirst(' ')
+  {s => cat('<' $tag '>' $s '</' $head '>')}
+}
+
+$kiwi.ctx_base + :{ this >>_html
+  (1 to 6 map {cat('h' .)} 'p' map { key =>
+    bindv($_html $key sym wrap_xml($key))
+  })
+} >>kiwi.ctx_html
+
+// Execute a file with context
+kiwi.run: { fname context =>
+  kiwi.parse_string(files.read($fname) $context)
+}
+
+// Parse a file
+kiwi.parse_file: { in out context =>
+  files.write($out kiwi.run($in $context))
+}
+
+// Store ascii values of important characters
+open_char: char('[')
+close_char: char(']')
+
+// Parse a string
+kiwi.parse_string: { in context =>
+  output: list() // Builder for output string
+
+  // Iterate over characters in input
+  in .chars reverse until $empty do { ch =>
+    // If character is start of tag
+    $ch = $open_char then {
+      // Then append the result of the tag
+      $context parse_tag output.append(. .chars)
+    } else {
+      // Otherwise append the character
+      $ch type != #Number
+      then {output.append(ch.chars)}
+      else {$ch output.push}
+    }
+  }
+
+  // Convert the builder into a real string
+  mkstr($output open)
+}
+
+// Parse a tag
+parse_tag: { context =>
+  // -- Parse the string -- //
+
+  // Builder for output string
+  store: list()
+
+  // Iterate over characters until tag is closed
+  until {dup = $close_char} do { ch =>
+    // If character is start of a nested tag
+    $ch = $open_char then {
+      // Append the result of the nested tag
+      $context parse_tag store.append(. .chars)
+    } else {
+      // Otherwise append the character
+      $ch store.push
+    }
+  } pop // Remove closing bracket
+
+  // Convert the builder into a real string
+  mkstr($store open)
+
+  // -- Evaluate the string -- //
+
+  // Split tag into head and body
+  .replace('\n' ' \n')
+  .splitfirst(' ')
+  >>body >>head
+
+  // If context contains head
+  hasv($context $head sym) then {
+    // Resolve head
+    getv($context $head sym) dup
+    // Is it a function?
+    type = #Closure
+      // Then apply the function
+      then {cat(. .apply($body))}
+      // Otherwise turn it into a string
+      else $str
+  } else {
+    // Otherwise reconstruct the tag
+    cat('[' $head ' ' $body ']')
+  }
+}
+
+_export: $kiwi
+
+?_main then {
+  import crayons
+  print(kiwi.parse_string('[p [lb]fish[rb]]' $kiwi.ctx_html))
+  print(kiwi.parse_string(
+    '[red Red!] [rainbow Rainbow!] [invert [blue Inverted Blue!]]'
+    $kiwi.ctx_base + $crayons
+  ))
+}

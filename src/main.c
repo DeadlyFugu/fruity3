@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
             } break;
             // M -- add Module path
             case 'M': {
-                printf("MODPATH %s\n", optarg);
+                Module_addPath(optarg);
             } break;
             // f -- use Fallback repl
             case 'f': {

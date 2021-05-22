@@ -5,7 +5,9 @@ print_stack: {
     map $crayons.rep empty else {join ' ' print}
 }
 
+// note: trying to print Repl on console causes segfault (stack overflow)
 Repl: :{}
+Repl.print_stack: $print_stack
 
 // Creates a new repl, useful for simulating repl behaviour
 Repl.new: {

@@ -12,11 +12,17 @@ extern void raiseInternal(VM* vm, const char* msg);
 static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path);
 static bool loadNativeModule(VM* vm, ModuleInfo* info, const char* path);
 
-static const char* modPaths[] = {
+static const char* modPaths[16] = {
     ".",
-    "./modules",
-    NULL
+    "./modules"
 };
+static int nextModPath = 2;
+
+void Module_addPath(const char* path) {
+    // todo: allow any amount of mod paths
+    assert(nextModPath < 16);
+    modPaths[nextModPath++] = path;
+}
 
 bool Module_import(VM* vm, const char* name, bool main) {
     for (int i = 0; i < vm->moduleCount; i++) {
@@ -30,7 +36,7 @@ bool Module_import(VM* vm, const char* name, bool main) {
     bool found = false;
     bool native = false;
     char path[1024];
-    for (int i = 0; modPaths[i]; i++) {
+    for (int i = 0; i < nextModPath; i++) {
         snprintf(path, 1024, "%s/%s.fj", modPaths[i], name);
         struct stat s;
         if (stat(path, &s) == 0) {

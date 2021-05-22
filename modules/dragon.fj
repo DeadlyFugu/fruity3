@@ -44,7 +44,7 @@ prompt: $_builtin.prompt
 input: {'' prompt}
 
 parse: {root _builtin.parse}
-eval: {parse :{} apply}
+eval: {parse apply}
 
 match: {f =>
     ?f.match then {dup f.match}
@@ -114,7 +114,7 @@ chain: {
     until {empty or $apply} do $pop
     empty else {top apply}
 }
-filter: {f => map {n => f($n) then $n}}
+// filter: {f => map {n => f($n) then $n}}
 
 enumerate: {
     n: 0
@@ -155,8 +155,13 @@ String.escape: {self _builtin.stresc}
 String.unescape: {self _builtin.strunesc}
 String.quote: {_builtin.strcat('\'' self '\'')}
 String.split: {delim => self $delim _builtin.strsplit}
+String.splitfirst: {delim =>
+    self.find($delim) >>n
+    $n then {self.sub(0 $n) self.sub($delim len + $n nil)}
+    else {self ''}
+}
 // String.splitws
-// String.trim
+String.trim: {self _builtin.strtrim}
 String.replace: {a b => ($a self.split join $b)}
 String.drop: {n => self $n nil _builtin.strsub}
 String.droptail: {n => self 0 $n negate _builtin.strsub}
@@ -295,5 +300,7 @@ exit: {0 _builtin.exit}
 
 sys: :{}
 sys.version: (0 _builtin.sysctl)
+
+disasm: $_builtin.disasm
 
 _visit: {.root(self)}
