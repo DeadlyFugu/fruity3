@@ -90,5 +90,7 @@ Complex._abs: {
 Complex._str: {
     cat($self.r '+' $self.i 'i')
 }
+Complex._open: {$self.r $self.i}
+Complex._visit: {.openable('math.complex' self)}
 
 _export: $math

@@ -4,4 +4,4 @@ build
 modules/mod*.so
 .clangd
 attic
-web/
+web/out

@@ -50,7 +50,7 @@ ds.Grid.findall: {(
 ds.Grid._open: {$self.values open}
 // todo: how to show grid as string?
 
-ds.Dict: :{}
+ds.Dict: :{l: list()}
 ds.Dict.new: {
   :{zip $ds.pair list >>l} as $ds.Dict
 }

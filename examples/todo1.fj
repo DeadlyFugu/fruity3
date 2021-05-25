@@ -1,0 +1,39 @@
+// This is the sample answer to the 'Fruitilicious Todo I' challenge
+
+print! 'Welcome to my Fruitilicious Todo App!!!'
+print! 'The commands are: \'add\', \'list\', \'remove\' or \'exit\''
+do {
+    prompt! 'Command: '
+    dup = 'exit' or {dup = nil} then {exit}
+    dup = 'add' then {
+        pop
+        'Task: ' prompt
+        #ok
+    }
+    dup = 'list' then {
+        pop
+        map {'- ' printw dup print}
+        #ok
+    }
+    dup = 'remove' then {
+        pop
+        'Task: ' prompt
+        // This zip should replace each todo on the stack matching what
+        // the user typed with #dummy. The users input is 'threaded'
+        // through the zip, staying on top of the stack always.
+        zip {
+            size > 1 then { // size = 1 means only input left
+                swap dup (.. .) // next input -> next next input
+                dup (. ..) // next next input -> next input next input
+                = (.)
+                then {swap pop #dummy} // next input true -> input #dummy
+                else {swap} // next input false -> input next
+            }
+        }
+        under pop // remove the input
+        filter {!= #dummy} // remove dummies created by zip
+        // todo: this would be simpler with repeat and under... maybe mention?
+        #ok
+    }
+    != #ok then {print! 'Command not recognised'}
+}

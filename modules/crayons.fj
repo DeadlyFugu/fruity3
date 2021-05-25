@@ -47,11 +47,13 @@ colorizer.oddball: $crayons.yellow
 colorizer.list: {self.openable('list' .)}
 colorizer.blob: {self.openable('blob' .)}
 colorizer.context: { ctx => (
-    $ctx lsv sort map { k =>
-        crayons.red! cat(k.name ':')
-        crayons.rep(getv($ctx $k))
+    $ctx is root then {crayons.yellow! 'root'} else {
+        $ctx lsv sort map { k =>
+            crayons.red! cat(k.name ':')
+            crayons.rep(getv($ctx $k))
+        }
+        join ' ' cat(':{' . '}')
     }
-    join ' ' cat(':{' . '}')
 )}
 colorizer.argument: { a =>
     cat(crayons.yellow! cat('@' a.key.name) ' ' crayons.rep! $a.value)
@@ -61,7 +63,6 @@ colorizer.openable: { swap >>ctor
     (. open map $crayons.rep join ' ')
     cat(crayons.cyan! $ctor '(' . ')')
 }
-colorizer.root: {pop crayons.yellow! 'root'}
 colorizer.unit: { u =>
     _chain: {(
         . open map {

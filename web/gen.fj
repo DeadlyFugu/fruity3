@@ -1,0 +1,155 @@
+
+import files
+import kiwi
+import crayons
+
+store: (:{
+  items: list()
+  pushBite: { name body =>
+    kiwi.ctx_base + :{
+      name: $name
+      body: $body
+      id: ($items len + 1)
+    } items.push
+  }
+  pushChallenge: { name body =>
+    items.pop + :{
+      challengeName: $name
+      challengeBody: $body
+    } items.push
+  }
+  index: 'undefined'
+} as this)
+
+// Use native syntax highlighter
+// parseCode: $native.syntaxHighlighter
+_asciiToSpan: list(
+    _e: char(27)
+    _s: {cat('<span class="' . '">')}
+    cat($_e '[31m') _s! 'var'
+    cat($_e '[32m') _s! 'string'
+    cat($_e '[33m') _s! 'num'
+    cat($_e '[34m') _s! 'sym'
+    cat($_e '[35m') _s! 'keyword'
+    cat($_e '[36m') _s! 'fn'
+    cat($_e '[2m') _s! 'comment'
+    cat($_e '[0m') '</span>'
+)
+parseCode: { str .trim >>s
+    f: nil
+    clear(safe! {$s parse >f})
+    $f then {
+        crayons.rep($f) .sub(1 -1)
+        ($_asciiToSpan open . fold {.replace})
+    } else $s
+}
+parseVals: {
+  map $crayons.rep join ' '
+  ($_asciiToSpan open . fold {.replace})
+}
+
+eval_ctx: (:{
+  import math
+} as root)
+_eval: {
+  parse $eval_ctx _builtin.evalin
+}
+
+// Build context for bites' kiwi templates
+kiwi.ctx_html + (:{
+  h: $kiwi.ctx_html.h3
+  index: {>>store.index}
+  bite: {s => s.splitfirst('\n') store.pushBite}
+  challenge: {s => s.splitfirst('\n') store.pushChallenge}
+  code: {s => cat('<code>' $s parseCode '</code>')}
+  answer: {s => cat('<div class="answer"><h2 class="answer-h" onclick="spoiler()">Answer</h2><div id="answer-spoiler" style="display:none">' $s '</div></div>')}
+  repl: {s =>
+    backupPrint: $_builtin.print
+    s.split('\n')
+    under clear(. _eval)
+    filter {.trim len > 0}
+    map { ln =>
+      cat('&gt; ' parseCode($ln))
+      captured: list()
+      {captured.push} >_builtin.print
+      res: list({_eval($ln)} catch {})
+      cat($captured open) .trim dup len = 0 then $pop
+      len($res) > 0 then {(
+        $res open
+        //map {dup type = #String then {.quote}}
+        // map $rep
+        // join ' '
+        // parseCode
+        parseVals
+      )}
+    } join '\n'
+    cat('<pre>' . '</pre>')
+    $backupPrint >_builtin.print
+  }
+  // simple case
+  case: {s =>
+    s.splitfirst('\n') swap pop
+    in: out: .splitfirst('\n')
+    cat('&gt; ' parseCode($in) in.trim len != 0 then ' ' '<span class="comment">YOUR CODE HERE</span>')
+    parseCode($out)
+    join '\n'
+    cat('<pre>' . '</pre>')
+  }
+  // program-should-print-something case
+  pcase: {s =>
+    s.splitfirst('\n') swap pop
+    in: out: .splitfirst('\n')
+    cat('&gt; ' parseCode($in))
+    ($out .split('\n') map {.trim})
+    join '\n'
+    cat('<pre>' . '</pre>')
+  }
+  // function case
+  fcase: {s =>
+    s.splitfirst('\n') swap pop
+    in: out: .split('\n')
+    cat('&gt; ' parseCode($in))
+    parseCode($out)
+    join '\n'
+    cat('<pre>' . '</pre>')
+  }
+  hint: {s =>
+    cat('<p><em>' $s '</em></p>')
+  }
+  mono: {cat('<code>' . '</code>')}
+  mono_block: {cat('<pre>' . '</pre>')}
+} as this) >>bites_kiwi
+
+bdir: files.path('./')
+
+// Run main.kiwi to build up store.items
+kiwi.run(bdir / 'main.kiwi' str $bites_kiwi)
+
+files.mkdir(bdir / 'out' str)
+
+// Save bites to files
+($store.items open map { bite =>
+  bdir / 'bite_template.kiwi' str
+  bdir / cat('out/bite' $bite.id '.html') str
+  $bite + (:{
+    prev: ($bite.id > 1 then {
+      cat('bite' $bite.id - 1 '.html')
+    } else 'index.html')
+    next: ($bite.id < (store.items len) then {
+      cat('bite' $bite.id + 1 '.html')
+    } else 'index.html')
+  } as this)
+  kiwi.parse_file
+})
+
+// Save index.html
+bdir / 'index_template.kiwi' str
+bdir / 'out/index.html' str
+kiwi.ctx_base + (:{
+  index: $store.index
+  forbites: {s => $store.items open map {item =>
+    s.replace('{' '[') .replace('}' ']')
+    $item kiwi.parse_string
+  }}
+} as this)
+kiwi.parse_file

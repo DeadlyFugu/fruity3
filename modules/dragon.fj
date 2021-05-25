@@ -23,7 +23,8 @@ empty: {size is 0}
 under: {size - 1 (dot . .)}
 reverse: $_builtin.reverse
 
-dump: $_builtin.dump
+// dump: $_builtin.dump
+dump: {list dup >>l open print($l open size >>n map $rep join ' ' cat('(' $n ') [' . ']'))}
 sort: $_builtin.sort
 
 add: {o => + $o}
@@ -32,7 +33,7 @@ mul: {o => * $o}
 div: {o => / $o}
 pow: {o => ^ $o}
 mod: {o => % $o}
-divmod: {a b => $a / $b int $a % $b}
+divmod: {a b => $a / $b int dup * $b $a swap sub}
 
 // todo: should .tostr be the casting method instead?
 str: {dup ?._str then {._str} else $_builtin.valstr}
@@ -302,5 +303,3 @@ sys: :{}
 sys.version: (0 _builtin.sysctl)
 
 disasm: $_builtin.disasm
-
-_visit: {.root(self)}
