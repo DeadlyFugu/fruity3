@@ -62,6 +62,7 @@ print_ex: { ex =>
         }
     )
 }
+Repl.__pex: $print_ex
 
 // Evaluate a string of code within the current repl
 // todo: ideally this shouldnt print directly?

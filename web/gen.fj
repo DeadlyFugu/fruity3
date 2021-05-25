@@ -2,6 +2,7 @@
 import files
 import kiwi
 import crayons
+import repl
 
 store: (:{
   items: list()
@@ -33,7 +34,12 @@ _asciiToSpan: list(
     cat($_e '[35m') _s! 'keyword'
     cat($_e '[36m') _s! 'fn'
     cat($_e '[2m') _s! 'comment'
+    cat($_e '[1m') _s! 'bold'
+    cat($_e '[36m_USER_') cat(_s! 'comment' '&lt;your code here&gt;')
+    cat(' ' $_e '[36m_NL_</span> ') '\n'
     cat($_e '[0m') '</span>'
+    '>' '&gt;'
+    '<' '&lt;'
 )
 parseCode: { str .trim >>s
     f: nil
@@ -48,11 +54,30 @@ parseVals: {
   ($_asciiToSpan open . fold {.replace})
 }
 
-eval_ctx: (:{
-  import math
-} as root)
+eval_ctx: (:{import math} as root)
 _eval: {
   parse $eval_ctx _builtin.evalin
+}
+
+simrepl: {
+  reverse list >>ins
+  until {$ins len = 0} do {
+    ln: ins.pop
+    cat('&gt; ' parseCode($ln))
+    captured: list()
+    {($_asciiToSpan open . fold {.replace}) captured.push} >_builtin.print
+    {captured.push ins.pop dup cat('<em>' . '</em>\n') captured.push} >root.prompt
+    res: list({_eval($ln)} catch {dup .trace.pop pop repl.__pex})
+    cat($captured open) .trim dup len = 0 then $pop
+    len($res) > 0 then {(
+      $res open
+      //map {dup type = #String then {.quote}}
+      // map $rep
+      // join ' '
+      // parseCode
+      parseVals
+    )}
+  }
 }
 
 // Build context for bites' kiwi templates
@@ -63,28 +88,19 @@ kiwi.ctx_html + (:{
   challenge: {s => s.splitfirst('\n') store.pushChallenge}
   code: {s => cat('<code>' $s parseCode '</code>')}
   answer: {s => cat('<div class="answer"><h2 class="answer-h" onclick="spoiler()">Answer</h2><div id="answer-spoiler" style="display:none">' $s '</div></div>')}
+  clrrepl: {s => (:{import math} as root) >eval_ctx}
+  clrrepl2: {s => (:{} as root) >eval_ctx}
   repl: {s =>
     backupPrint: $_builtin.print
+    backupPrompt: $root.prompt
     s.split('\n')
     under clear(. _eval)
-    filter {.trim len > 0}
-    map { ln =>
-      cat('&gt; ' parseCode($ln))
-      captured: list()
-      {captured.push} >_builtin.print
-      res: list({_eval($ln)} catch {})
-      cat($captured open) .trim dup len = 0 then $pop
-      len($res) > 0 then {(
-        $res open
-        //map {dup type = #String then {.quote}}
-        // map $rep
-        // join ' '
-        // parseCode
-        parseVals
-      )}
-    } join '\n'
+    map {.trim}
+    filter {len > 0}
+    simrepl join '\n'
     cat('<pre>' . '</pre>')
     $backupPrint >_builtin.print
+    $backupPrompt >root.prompt
   }
   // simple case
   case: {s =>
@@ -118,6 +134,7 @@ kiwi.ctx_html + (:{
   }
   mono: {cat('<code>' . '</code>')}
   mono_block: {cat('<pre>' . '</pre>')}
+  mono_bhl: {cat('<pre>' . parseCode '</pre>')}
 } as this) >>bites_kiwi
 
 bdir: files.path('./')

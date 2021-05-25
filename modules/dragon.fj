@@ -75,6 +75,8 @@ refv: {:{self key =>} as $Reference}
 //       distinguish protos from children by means of special _proto attrib?
 //       or is this just overly complex lol?
 lsv: $_builtin.lsv
+hasb: $_builtin.hasb
+lsb: $_builtin.lsb
 getp: $_builtin.getp
 setp: {b => as $b pop}
 type: $_builtin.type

@@ -38,19 +38,43 @@ colorizer: :{}
 colorizer.number: $crayons.yellow
 colorizer.symbol: $crayons.blue
 colorizer.string: {rep crayons.green}
-colorizer.closure: { f =>
-    safe! {$f disasm}
-    then {map {self.unit} join ' ' cat('{' . '}')}
-    else {crayons.faint! '<native closure>'}
+_colorizeclos: { cl =>
+    sig: list()
+    reverse
+    until {empty or {dup $.kind != #sigbind}}
+    do {.value.name sig.push}
+    reverse map {cl.unit} join ' '
+    cat('{'
+        sig.empty else {
+            ($sig open reverse map $crayons.red
+            '=>' crayons.magenta join ' ') ' '
+        }
+        . '}'
+    )
 }
+colorizer.closure: { f => (
+    safe! {$f disasm}
+    then {self _colorizeclos}
+    else {crayons.faint! '<native closure>'}
+)}
 colorizer.oddball: $crayons.yellow
 colorizer.list: {self.openable('list' .)}
 colorizer.blob: {self.openable('blob' .)}
 colorizer.context: { ctx => (
     $ctx is root then {crayons.yellow! 'root'} else {
-        $ctx lsv sort map { k =>
+        $ctx lsb size >>nb sort map { k =>
             crayons.red! cat(k.name ':')
             crayons.rep(getv($ctx $k))
+        }
+        top($ctx lsv size) - $nb >>inherit
+        // todo: show inherited if below some cutoff (4?)
+        $inherit > 0 then {
+            $inherit <= 4 then {
+                b: list($ctx lsb)
+                ($ctx lsv filter {b.contains not} sort map { >>k
+                    crayons.faint! cat(k.name ': ' getv($ctx $k) rep)
+                })
+            } else {crayons.faint! cat('<+' $inherit ' inherited>')}
         }
         join ' ' cat(':{' . '}')
     }
@@ -84,8 +108,8 @@ colorizer.unit: { u =>
         #symbol {$u.value self.symbol}
         #string {$u.value self.string}
         #oddball {$u.value self.oddball}
-        #closure {'{' $u.sub _list '}'}
-        #object {':{' $u.sub _list '}'}
+        #closure {($u.sub open self _colorizeclos)}
+        #object {':' ($u.sub open self _colorizeclos . swap cat)}
         #callv {$u.value _chain _c.cyan}
         #getv {'$' $u.value _chain cat _c.red}
         #setv {'>' $u.value _chain cat _c.red}

@@ -20,7 +20,7 @@ extern Stack* genTraceList(VM* vm);
 static bool evalNode(VM* vm, AstNode* node);
 static ResolveStatus chainResolve(VM* vm, AstNode* node,
     Context** base, AstChainElem** chainElem, Value* self);
-static Context* getContext(VM* vm, Value v);
+Context* getContext(VM* vm, Value v);
 bool evalCall(VM* vm, AstNode* caller, Value v, Value* self);
 static bool applyOperator(VM* vm, AstNode* node, Value lhs, int op);
 static bool isTruthy(Value v);
@@ -427,7 +427,7 @@ static ResolveStatus chainResolve(VM* vm, AstNode* node,
     return hasSelf ? RESOLVE_SELF : RESOLVE_NOSELF;
 }
 
-static Context* getContext(VM* vm, Value v) {
+Context* getContext(VM* vm, Value v) {
     // todo: make this a macro for perf?
     //       can do something like:
     //  GET_TYPE(v) == TYPE_CONTEXT ? GET_CONTEXT(v) : vm->protos[GET_TYPE(v)]

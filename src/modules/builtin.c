@@ -101,10 +101,49 @@ bool builtin_hasv(VM* vm) {
     fpPush(vm, pv ? VAL_TRUE : VAL_FALSE);
     return true;
 }
-
+// todo: expose properly
+extern Context* getContext(VM* vm, Value v);
 bool builtin_lsv(VM* vm) {
+    Value v;
+    if (!fpExtract(vm, "v", &v)) return false;
+    Context* c = getContext(vm, v);
+    int marker = vm->stack->next;
+    while (c) {
+        int end = vm->stack->next;
+        for (int i = 0; i < c->capacity; i++) {
+            if (c->keys[i]) {
+                for (int j = marker; j < end; j++) {
+                    if (GET_SYMBOL(vm->stack->values[j]) == c->keys[i]) {
+                        goto skip_pushing;
+                    }
+                }
+                fpPush(vm, FROM_SYMBOL(c->keys[i]));
+                skip_pushing:;
+            }
+        }
+        c = c->parent;
+    }
+    return true;
+}
+
+bool builtin_hasb(VM* vm) {
     Context* c;
+    Symbol s;
     // todo: string-or-symbol char in extract?
+    if (!fpExtract(vm, "cy", &c, &s)) return false;
+    bool found = false;
+    for (int i = 0; i < c->capacity; i++) {
+        if (c->keys[i] == s) {
+            found = true;
+            break;
+        }
+    }
+    fpPush(vm, found ? VAL_TRUE : VAL_FALSE);
+    return true;
+}
+
+bool builtin_lsb(VM* vm) {
+    Context* c;
     if (!fpExtract(vm, "c", &c)) return false;
     for (int i = 0; i < c->capacity; i++) {
         if (c->keys[i]) fpPush(vm, FROM_SYMBOL(c->keys[i]));
@@ -1345,6 +1384,8 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(bindv);
     REGISTER(hasv);
     REGISTER(lsv);
+    REGISTER(hasb);
+    REGISTER(lsb);
     REGISTER(type);
     REGISTER(getp);
     REGISTER(sym);

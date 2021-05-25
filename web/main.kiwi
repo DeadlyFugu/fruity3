@@ -82,18 +82,17 @@
 ]
 
 [challenge Mixin' it up!
-  [p Write some code such that [code 1 2 'Jason' 3 YOUR_CODE_HERE] will give the result [code 1 3 2 2]]
-  [p You are not allowed to push anything, other than the [code 1 2 'Jason' 3] at the beginning.]
-  [case
-  1 2 'Jason' 3
-  1 3 2 2
+  [p Write some code to transform the stack [code 1 2 'Jason' 3] into the result [code 1 3 2 2]]
+  [p You should not push anything, other than the [code 1 2 'Jason' 3] at the beginning.]
+  [repl _USER_: {swap pop swap dup}
+  1 2 'Jason' 3 _USER_
   ]
   [p Note: To test out your code, you will have to include [code 1 2 'Jason' 3] first each time. Pressing the up key in the repl will let you edit your previous line so you don't have to type this more than necessary.]
   [answer
   [repl
   1 2 'Jason' 3 swap pop swap dup
   ]
-  [p First we swap the first two values to get [code 1 2 3 'Jason'], and then use pop to remove 'Jason' from the stack. We then use swap to make the stack into [code 1 3 2], and then use dup to duplicate the 2 on the end.]
+  [p First we [code swap] the first two values to get [code 1 2 3 'Jason'], and then use [code pop] to remove 'Jason' from the stack. We then use [code swap] to make the stack into [code 1 3 2], and then use [code dup] to duplicate the 2 on the end.]
   ]
 ]
 
@@ -115,15 +114,14 @@
 ]
 
 [challenge Will it Blend?
-  [case
-  1 'Jason' 3 4
-  1 1 3 4
-  ]
   [p This challenge is the same as the last - write something to convert what you're given into the shown output.]
-  [p Again, you are not allowed to push.]
+  [repl _USER_: {under dup under pop sort}
+  1 'Jason' 3 4 _USER_
+  ]
+  [p Again, you should not push any additional values.]
   [p There are many possible solutions to this challenge.]
   [answer
-  [p Here are some possible solutions, only the first one is explained in detail.]
+  [p Here are some possible solutions.]
   [repl
   1 'Jason' 3 4 sort pop reverse dup reverse
   1 'Jason' 3 4 under dup under pop sort
@@ -184,12 +182,12 @@
   ]
   [p Lisp programmers be like 🤔 right about now...]
   [p A group is evaluated on it's own stack, independently of the rest of the groups. At the end of it's execution (i.e. once we reach the closing parenthesis) it will push anything left on it's stack onto the previous stack. The above code works because each group will evaluate to a single result, which will then be pushed in the groups place onto the previous stack.]
-  [p Note that Fruity's syntax is rather whitespace sensitive, and usually requires a whitespace between every token. The one exception to this is on the inside of parentheses and braces (which we'll see later). Spaces are still required on the outside of braces, so while [code 1 (2)] is okay, [code 1(2)] is not.]
+  [p Note that Fruity's syntax is rather whitespace sensitive, and usually requires a whitespace between every token. The one exception to this is on the inside of parentheses and braces (which we'll see later). Spaces are still required on the outside of braces, so while [code 1 (2)] is okay, [mono 1(2)] is not.]
   [p To get a better idea of how execution works, we can 'inspect' the stack within a group:]
   [repl
   #a (#b #c dump)
   ]
-  [p Here I've introduced a new function, [code dump]. This function will print out a representation of the current stack for debugging purposes. Because it is executed within the group, it is only able to see [code #b] and [code #c], and so that it all it prints.]
+  [p Here I've used a new function, [code dump]. This function will print out a representation of the current stack for debugging purposes. Because it is executed within the group, it is only able to see [code #b] and [code #c], and so that it all it prints.]
   [p Similarly, we can use the [code size] function to count how many values are on the current stack:]
   [repl
   #a (#b #c size)
@@ -205,17 +203,34 @@
   ]
 ]
 
-[challenge Group Discussion
-  [p TODO]
+todo: maybe briefly introduce functions before this?
+[challenge Minmaxing
+  [p Although we haven't covered functions yet, here's code to define a function called [code nums] which pushes [code 5 3 9 7] to the stack. Copy paste this line into the REPL to define the function.]
+  [repl
+  nums: {5 3 9 7}
+  ]
+  [p Write a single line of code that, using [code nums], finds the minimum and maximum value the function pushes. It should work even if you change the numbers pushed by [code nums].]
+  [repl _USER_: {(nums sort reverse top) (nums sort top)}
+  _USER_
+  ]
+  [hint Finding either the minimum or maximum can be done with just the functions we saw earlier.]
   [answer
-  [p TODO]
+  [p We can use [code sort reverse top] to find the minimum, and [code sort top] to find the maximum.]
+  [repl
+  nums sort reverse top (nums sort top)
+  ]
+  [p The second part must be in a group, otherwise the earlier found minimum would be removed by the second [code top].]
+  [repl
+  nums sort reverse top nums sort top
+  ]
+  [p As an aside, you can define your own function [code NAME] with [code NAME: {_USER_}]. Typing [code NAME] is (mostly) identical to having typed out the parts within the braces. This isn't needed for any challenges until it's covered, but it might make some easier.]
   ]
 ]
 
 [bite Dots
   [p As you may have figured out by now, Fruity's main data structure is not just a stack, but a stack of stacks*. Each time we enter a group, a new stack is pushed to the stack-stack, and when we exit a group the top stack is popped from the stack-stack, with it's contents put on the end of the new top stack.]
-  [p *Actually, it's a stack of stacks of stacks... Just kidding... Unless?]
-  [p So, if we can manipulate the (regular) stack, can we manipulate the stack-stack? Well, not quite. But there is one operator that can communicate between stacks, the dot operator.]
+  [hint *Actually, it's a stack of stacks of stacks... Just kidding... Unless?]
+  [p So, if we can manipulate the (regular) stack in all sorts of ways, can we do the same with the stack-stack? Well, not quite. But there is one operator that can communicate between stacks, the dot operator.]
   [p The dot operator allows us to move values from the previous stack to the current (top) stack. As an example:]
   [repl
   1 2 (. 3 math.sum)
@@ -240,15 +255,72 @@
 
 [challenge Morse Code
   [p Reorganise the following values into the desired output using only groups and the dot operator:]
-  [case
-  1 2 #apple #banan
-  1 #apple 2 #banan
+  [repl _USER_: {(. .. .) (. . . .)}
+  1 2 #apple #banan _USER_
   ]
   [answer
   [repl
   1 2 #apple #banan (. .. .) (. . . .)
   ]
   [p The first group will rearrange the stack into [code #banan 2 #apple 1], which is the desired output but backwards. Then, we the second group will just reverse that to give us the desired output (in reality, you'd normally use the [code reverse] function here)]
+  ]
+]
+
+[bite String Operations
+  [p Fruity has various functions for operating on strings. The [code str] function converts any value into a string.]
+  [repl
+  32 str #a str 'Hello' str
+  ]
+  [p The [code rep] function is almost identical, however it will attempt to provide a source-code like representation of the value. For strings, this means including quotation marks and escaping characters.]
+  [repl
+  32 rep #a rep 'Hello\nworld' rep
+  ]
+  [p Note the string above looks extra confusing as it is essentially being [code rep]'d twice, once when we call [code rep] and another time by the REPL to display the output.]
+  [p There are also the [code int] and [code float] functions, for converting a string to a number. The [code int] function will only accept integers. [code int] can also be used to round a number to the nearest integer.]
+  [repl
+  '32' int
+  '3.14' float
+  3.14 int
+  ]
+  [p The [code open] function can be used to break a string into individual characters.]
+  [repl
+  'Hello' open
+  ]
+  [p The [code cat] function will combine everything on the stack into one string. Each value is converted to a string using [code str] internally.]
+  [repl
+  'Who' 'Is' 'Juan' '?' cat
+  '1 + 1 = ' 2 cat
+  1 2 3 cat
+  ]
+  [p The [code char] function behaves like [code open], but returns ASCII values instead.]
+  [repl
+  'fish' char
+  ]
+  [p And finally the [code mkstr] function is the inverse of [code char], making a string from ASCII values on the stack.]
+  [repl
+  121 101 101 104 97 119 mkstr
+  'fish' char mkstr
+  ]
+  [p The [code char] function will also convert a single ASCII value into a string. Unlike [code mkstr] though it will only manipulate the top value.]
+  [repl
+  42 char
+  98 99 100 char
+  ]
+]
+
+[challenge sdrawkcab
+  [p Write a program that reverses whatever string it is given. For example:]
+  [repl _USER_: {open reverse cat}
+  'hello' _USER_
+  'omae wa mou' _USER_
+  ]
+  [answer
+  [p Either open/cat or char/mkstr can be used here. open/cat is preferable as those are more commonly used functions.]
+  [repl
+  'hello' open reverse cat
+  'hello' char reverse mkstr
+  ]
+  [p First we split the string into it's individual characters, we use [code reverse] to reverse their order, and then we recombine them back into a single string.]
   ]
 ]
 
@@ -267,102 +339,38 @@
   'a' printw 'b' printw 'c' print
   ]
   [p We can also get a string as input from the user.]
-  [irepl
-  input ' is a cool kid.' cat print
+  [repl
+  input printw ' is a cool kid.' print
   Jason
   ]
-  [p If we need to get a number from the user, we must convert it using [code tonum].]
-  [irepl
-  input tonum + 1 ' is a bigger number!' cat print
+  [p If we need to get a number from the user, we can convert it using [code float] or [code int].]
+  [repl
+  input int 1 add ' is a bigger number!' cat print
   6
   ]
   [p Since we often want to print out some kind of prompt to ask the user to type input, we also have the [code prompt] function which does just that.]
-  [irepl
-  '1 + 2 = ' prompt = 3 then 'correct' else 'really?' print
+  [repl
+  'let x = ' prompt int dup dup mul mul 'x^3 = ' swap cat print
   4
   ]
 ]
 
 [challenge Hi, Ny Name is...
   [p Write a program that asks a user for their name, then prints a personalized greeting.]
-  [pcase
-
-  Enter your name:
+  [repl _USER_: {'Enter your name: ' prompt 'Hello, ' printw print}
+  _USER_
   Jason
-  Hello, Jason
-  ]
-  [pcase
-
-  Enter your name:
+  _USER_
   Mary
-  Hello, Mary
   ]
   [answer
-  [irepl
-  'Enter your name:' print input 'Hello, ' printw print
+  [repl
+  'Enter your name: ' prompt 'Hello, ' printw print
   Jason
   ]
-  [p First we use [code 'Enter your name:' print] to display the message.]
-  [p Then we use [code input] to get the user's input.]
+  [p First we use [code 'Enter your name:' prompt] to display the message and get the user's input.]
   [p [code 'Hello, ' printw] will print out 'Hello, ' without a newline.]
   [p Finally [code print] will print their name after the output from [code printw].]
-  ]
-]
-
-[bite String Operations
-  [p Fruity has various functions for operating on strings. The [code str] function converts any value into a string.]
-  [repl
-  32 str #a str 'Hello' str
-  ]
-  [p The [code rep] function is almost identical, however it will attempt to provide a source-code like representation of the value. For strings, this means including quotation marks and escaping characters.]
-  [repl
-  32 rep #a rep 'Hello\nworld' rep
-  ]
-  [p Note the string above looks extra confusing as it is essentially being [code rep]'d twice, once when we call [code rep] and another time to display the output.]
-  [p There are also the [code int] and [code float] functions, for converting a string to a number. The [code int] function will only accept integers. [code int] can also be used to round a number to the nearest integer.]
-  [repl
-  '32' int
-  '3.14' float
-  3.14 int
-  ]
-  [p The [code open] function can be used to break a string into individual characters.]
-  [repl
-  'Hello' open
-  ]
-  [p The [code cat] function will combine everything on the stack into one string. Each value is converted to a string using [code str] internally.]
-  [repl
-  'Who' 'Is' 'Juan' '?' cat
-  '1 + 1 = ' 2 cat
-  1 2 3 cat
-  ]
-  [p The [code .chars] function behaves like [code open], but returns ASCII values instead. Note the dot prefix means this is not a regular function, but the details will be covered later.]
-  [repl
-  'fish' .chars
-  ]
-  [p And finally the [code mkstr] function is the inverse of [code .chars], making a string from ASCII values on the stack.]
-  [repl
-  121 101 101 104 97 119 mkstr
-  'fish' .chars mkstr
-  ]
-]
-
-[challenge sdrawkcab
-  [p Write a program that reverses whatever string it is given. For example:]
-  [case
-  'hello'
-  'olleh'
-  ]
-  [case
-  'fish cake'
-  'ekac hsif'
-  ]
-  [answer
-  [p Either open/cat or .chars/mkstr can be used here. open/cat is preferable as these are more commonly used functions.]
-  [repl
-  'hello' open reverse cat
-  'hello' .chars reverse mkstr
-  ]
-  [p First we split the string into it's individual characters, we use [code reverse] to reverse their order, and then we recombine them back into a single string.]
   ]
 ]
 
@@ -440,7 +448,7 @@
   32 not
   nil not
   ]
-  [p In addition to these functions, there are infix special functions that can be used for combining specifically two values. These behave just like the infix operators. In fact, all special functions (highlighted in purple) in Fruity are infix. These are completely distinct from regular functions and are built into the language.]
+  [p In addition to these functions, there are infix special functions [code and ...] and [code or ...] that can be used for combining specifically two values. These behave just like the infix operators. In fact, all special functions (highlighted in purple here) in Fruity are infix. These are completely distinct from regular functions and are built into the language.]
   [repl
   true and false
   false or true
@@ -451,20 +459,15 @@
 
 [challenge Can I Ride?
   [p A ride in a theme park requires riders to be taller than 2.5m but below 3.9m. Write a program that determines whether or not you are allowed to ride.]
-  [case
-  1.2
-  false
-  ]
-  [case
-  4.3
-  false
-  ]
-  [case
-  3.2
-  true
+  [repl _USER_: {dup > 2.5 swap < 3.9 all}
+  1.2 _USER_
+  4.3 _USER_
+  3.2 _USER_
   ]
   [answer
   [repl
+  1.2 dup > 2.5 swap < 3.9 all
+  4.3 dup > 2.5 swap < 3.9 all
   3.2 dup > 2.5 swap < 3.9 all
   ]
   [p First we use dup to get two copies of the number we want to work with. Then we use [code > 2.5] to determine if the value given is over 2.5.]
@@ -478,7 +481,7 @@
   [repl
   1 = 1 then 'yes' else 'no'
   ]
-  [p We can only have one value after each of [code then] and [code else]. If we wish to push multiple values, we must surround them in curly braces. This forms what is called a closure.]
+  [p We can only have one value after each of [code then ...] and [code else ...]. If we wish to push multiple values, we must surround them in curly braces. This forms what is called a closure.]
   [repl
   false then {1 2 3} else {2 4}
   ]
@@ -498,26 +501,21 @@
 ]
 
 [challenge Can I Ride Now?
-  [p A ride in a theme park has a minimum height of 2.4m. Write a program that, given a person's height, tells them whether they can ride. Use [code print].]
-  [pcase
-  3.6
-  You may ride.
-  ]
-  [pcase
-  1.2
-  Sorry, you must be at least 2.4m to ride.
+  [p A ride in a theme park has a minimum height of 2.4m. Write a program that, given a person's height, tells them whether they can ride using [code print].]
+  [repl _USER_: {>= 2.4 then 'You may ride.' else 'Sorry, you must be at least 2.4m to ride.' print}
+  3.6 _USER_
+  1.2 _USER_
   ]
   [answer
   [repl
-  3.6
-  >= 2.4 then 'You may ride.' else 'Sorry, you must be at least 2.4m to ride.' print
+  3.6 >= 2.4 then 'You may ride.' else 'Sorry, you must be at least 2.4m to ride.' print
   ]
-  [p We first use [code >= 2.4] to test if the value given is more than or equal to 2.4. Then we use a [code then ... else ...] statement to choose a string based off of the condition. Finally we use print to display the chosen string.]
+  [p We first use [code >= 2.4] to test if the value given is more than or equal to 2.4. Then we use a [code then ... else ...] statement to choose a string based off of the condition. Finally we use [code print] to display the chosen string.]
   ]
 ]
 
 [bite Looping I
-  [p Fruity contains several special functions for looping, most of which are a bit unorthodox. Starting with the most normal ones, we have repeat:]
+  [p Fruity contains several special functions for looping, most of which are a bit unorthodox. Starting with the more normal ones, we have repeat:]
   [repl
   3 repeat {'hello' print}
   10 3 repeat {* 2}
@@ -543,7 +541,7 @@
   [repl
   'fish' 'cat' 'dog' until {empty} do {print}
   ]
-  [p It is also worth mentioning that, like [code then ... else ...], both the [code until ...] and [code do ...] parts can be omitted. Omitting the [code until ...] part is not particularly useful as that just makes an infinite loop.]
+  [p It is also worth mentioning that, like [code then ... else ...], both the [code until ...] and [code do ...] parts can be omitted. Omitting the [code until ...] part is not particularly useful as that just makes an infinite loop. The only way to break out of it is via an exception (covered later) or the [code exit] function, which terminates the program.]
   [repl
   1 until {+ 1 dup = 5}
   ]
@@ -551,9 +549,8 @@
 
 [challenge Factorials
   [p A common function to demonstrate looping in various languages is the factorial. For any given positive number N, the factorial of it is the product of the numbers 1 to N. For example, the factorial of 5 is 1 * 2 * 3 * 4 * 5. Write Fruity code to calculate the factorial of a given number, using only the looping constructs covered so far.]
-  [case
-  6
-  720
+  [repl _USER_: {until {dup = 1} do {dup - 1} until {size = 1} do {mul}}
+  6 _USER_
   ]
   [answer
   [p We can solve this with two loops, one to produce all the numbers from 1 to N, and another to multiply them together.]
@@ -575,12 +572,12 @@
   [repl
   1 5 0.5 math.range
   ]
-  [p Another common situation is wanting to execute a piece of code for every value on the stack. The [code map ...] special function is made for this very purpose.]
+  [p Another common situation is wanting to execute a piece of code for every value on the stack. The [code map ...] special function is meant for this very purpose.]
   [repl
   1 to 5 map {+ 1}
   'hello' 'darkness' map {print}
   ]
-  [p Note that this executes from the bottom of the stack upwards. If we use [code dump] to inspect what's happening, we can see how it works internally:]
+  [p This executes from the bottom of the stack upwards, so [mono hello] is printed first. If we use [code dump] to inspect what's happening, we can see how it works internally:]
   [repl
   1 to 5 map {dump}
   ]
@@ -589,14 +586,13 @@
   [repl
   1 to 10 filter {% 2 = 1}
   ]
-  [p This special function uses it's closure as a predicate to determine whether or not to keep the given value in the final output. It's behavour can be mimiced by combining [code map ...] and [code then ... else ...], can you figure it out?]
+  [p This special function uses its closure as a predicate to determine whether or not to keep the given value in the final output. It's behavour can be mimiced by combining [code map ...] and [code then ... else ...], can you figure out how?]
 ]
 
 [challenge 7 Times Tables
   [p Write a program that will produce the seven times tables, all the way up to 7 * 12. Try and do it without the [code math.range] function.]
-  [case
-  
-  7 14 21 28 35 42 49 56 63 70 77 84
+  [repl _USER_: {1 to 12 map {* 7}}
+  _USER_
   ]
   [answer
   [repl
@@ -626,25 +622,26 @@
   $math.sum
   $math.product
   ]
-  [p Note that [code map $add] is equivalent to [code map {add}], but again that will be covered later.]
+  [p Note that [code fold $add] is equivalent to [code fold {add}], but again that will be covered later.]
   [p The final major looping construct is [code zip ...]. This is very similar to [code map ...], but internally it works somewhat differently.]
   [repl
   1 to 5 zip {+ 1}
+  #a #b #c zip {dup print}
   1 to 5 zip {dump}
   ]
-  [p Like [code map ...] it can be used to apply a closure to each value on the stack. However, we can see from the second example that it starts from the top and works downwards. While [code map ...] will push then execute repeatedly, [code zip ...] will execute then pop. Once it is done, all the popped values are returned to the stack. If the closure only takes in one value and produces one value, these two are mostly interchangable (except the order is reversed). Since [code map ...] pushes one value at a time, it can also be used when you want to take in one value and produce multiple. On the other hand, [code zip ...] can be used when you want to take in multiple but only produce one value.]
+  [p Like [code map ...] it can be used to apply a closure to each value on the stack. However, we can see from the second example that it starts from the top and works downwards. While [code map ...] will push then execute, [code zip ...] will execute then pop. Once it is done, all the popped values are returned to the stack. If the closure only takes in one value and produces one value, these two are mostly interchangable (except the order is reversed). Since [code map ...] pushes one value at a time, it can also be used when you want to take in one value and produce multiple. On the other hand, [code zip ...] can be used when you want to take in multiple but only produce one value.]
   [repl
   1 2 3 map {dup}
   1 2 3 4 zip {add}
   ]
-  [p Most of the time, [code map ...] is the correct choice, but when you need to combine values on the stack (often in pairs), [code zip ...] is preferable.]
+  [p Most of the time, [code map ...] is the correct choice, but when you need to combine values on the stack (often in pairs), [code zip ...] is needed.]
 ]
 
 [challenge Sum of Products
   [p Given a sequence of numbers, evaluate it as if every pair of numbers was a product, and each of the pairs was being summed together. For instance, the numbers [code 1 2 3 4 5 6] would be evaluated as if it were [code (1 * 2) + (3 * 4) + (5 * 6)]]
-  [case
-  1 to 6
-  44
+  [repl _USER_: {zip {mul} fold {add}}
+  1 to 6 _USER_
+  10 2 5 3 _USER_
   ]
   [answer
   [repl
@@ -667,7 +664,7 @@
   32 'a' 1 cat(..)
   ]
   [p This is called a prefix call, or precall for short. Keep in mind that Fruity is whitespace sensitive, so [code print(1)] is distinct from [code print (1)], the latter executes [code print] first, then [code (1)].]
-  [p There is also a prefix syntax for when you do not want to execute it within a new group, by appending a '!'.]
+  [p There is also a syntax for when you want the prefix order but not a group, by appending a '!'.]
   [repl
   not! true
   print! 'hello world'
@@ -675,7 +672,7 @@
   1 2 cat! 3 4
   'a,b,c' .split! ','
   ]
-  [p Note that [code .split] is not a regular function, but a 'method', like [code .chars] that we saw before. These functions, which start with a '.', are determined based on the value on top of the stack, rather than being globally defined like the other functions we've seen so far. They pop this value when they are determined, which for precalls occurs before evaluation of the right hand side. This means all the below are equivalent:]
+  [p Note that [code .split] is not a regular function, but a 'method'. These functions, which start with a '.', are defined by the value on top of the stack, rather than being globally defined like the other functions we've seen so far. They pop this value when they are determined, which for precalls occurs before evaluation of the right hand side. This means all the below are equivalent:]
   [repl
   ',' 'a,b,c' .split
   'a,b,c' .split! ','
@@ -683,7 +680,7 @@
   ',' 'a,b,c' .split(.)
   ',' 'a,b,c' .split! ()
   ]
-  [p Aside: Fruity doesn't really have a concept of methods, more accurately this would be called a 'stack relative' or 'stack resolved' function, as the function is resolved relative to the value on top of the stack. This will be covered in a later bite, however.]
+  [hint An aside: Fruity doesn't really have a concept of methods, more accurately this would be called a 'stack relative' or 'stack resolved' function, as the function is resolved relative to the value on top of the stack.]
   [p While we're on this topic, it's worth mentioning the [code join ...] special function, which is the inverse of [code .split].]
   [repl
   'a' 'b' 'c' join ','
@@ -692,17 +689,19 @@
   [repl
   'a' 'b' 'c' ',' ._join
   ]
+  [p There's also the [code dot ...] special function, which dots by a given amount. So, [code dot 4] is equivalent to [code ....]]
+  [repl
+  1 2 3 4 5 reverse(dot 3)
+  1 2 3 4 5 size - 1 (dot . .)
+  ]
+  [p The [code dot .] in the second example will dot by the amount [code size - 1], as that will be the value on top of the stack that the [code .] pulls through. This will move all but one value from the old stack, so then we have a final [code .] on the end to move the final value on top of the new stack. This is equivalent to the [code under] function - in fact, it might just be how that function is implemented.]
 ]
 
 [challenge sdrawkcab sdrow
-  [p This challenge is more so a test of all your knowledge so far, rather than just the above bite. Write code that, given a string, will reverse each of the individual words within in, while maintaining the overall order. There are no restrictions. (Well, ideally do it in Fruity or that misses the point)]
-  [case
-  'hello world'
-  'dlrow olleh'
-  ]
-  [case
-  'fruity is stupid who made this crap'
-  'ytiurf si diputs ohw edam siht parc'
+  [p This challenge is more so a test of all your knowledge so far, rather than just the above bite. Write code that, given a string, will reverse the letters of each individual word within in, while maintaining the overall order of the words. There are no restrictions. (Well, ideally do it in Fruity or that misses the point)]
+  [repl _USER_: {.split! ' ' map {cat(. open reverse)} join ' '}
+  'hello world' _USER_
+  'fruity is stupid who made this crap' _USER_
   ]
   [answer
   [p There are many possible answers, here is mine.]
@@ -717,14 +716,13 @@
 [bite Modules I
   [p So far we've only covered using the REPL, however writing larger programs this way is rather impractical. Like any other language, you can write your source code into a file and run it in the interpreter.]
   [p Fruity source code conventionally uses the extension [mono .fj]. Write the following into a file, save it as [mono hello.fj], and then run it from a shell as shown:]
-  [mono print('Hello, world!')]
-  [mono_block
-$ fp hello.fj
-Hello, world!
-  ]
+  [mono_bhl print('Hello, world!')]
+  [mono_block $ fp hello.fj
+Hello, world!]
   [p You can use [mono fp -h] to see available options, but usually you shouldn't need them.]
   [p Fruity code is organised into modules, each of which is generally represented by a single file. Writing your own modules will be covered later, but for now it's useful to know that there are several modules provided by Fruity. You can import a module into a file using [code import module_name], for instance [code import files] to import the [code files] module.]
-  [p Note that in the REPL, the [code math] and [code ds] modules are imported by default. We have seen some functions from the [code math] module already (those prefixed by [mono math.]). When writing code in [mono .fj] files, you need to import these explicitly.]
+  [mono_bhl import math _NL_ print(1 2 3 math.sum)]
+  [p Note that in the REPL, the [code math] and [code ds] modules are imported by default. We have seen some functions from the [code math] module already (those prefixed by [mono math.]). When writing code in [mono .fj] files, you need to import these explicitly before using any functions from them.]
   [p All of the functions you've seen so far (other than the math ones) are from the [code dragon] module, which is the standard library for Fruity. It's functions are available globally, but you can also access them by explicitly importing the dragon module.]
   [repl
   import dragon
@@ -748,8 +746,7 @@ Hello, world!
 [challenge Fruitilicious Todo I?
   [p For this challenge your goal is to make a todo list app. It only needs three features: adding to the list, seeing what's on the list, and removing from the list. Since this is quite a bit more complex than previous challenges, it is expected that you do this in a [mono .fj] file (although nobody's stopping you from doing a one-liner in the REPL if you want...)]
   [p An example interaction might be as follows:]
-  [mono_block
-$ fp todo1.fj
+  [mono_block $ fp todo1.fj
 Welcome to my Fruitilicious Todo App!!!
 The commands are: 'add', 'list', 'remove' or 'exit'
 Command: add
@@ -763,8 +760,7 @@ Command: remove
 Task: drink plant
 Command: list
 - water fish
-Command: exit
-  ]
+Command: exit]
   [p You don't have to copy this exactly, but it demonstrates the basic idea. Feel free to add in additional features if you want.]
   [p Warning: Implementing the remove command is a quite brutal without the content of the next bite, but a fun challenge. No shame in skipping that part if you find it too hard.]
   [p Hint: Use the stack to store your todos. 'add' should be rather straightforward.]
@@ -817,10 +813,11 @@ Command: exit
   $name
   ]
   [p Variables have a wide variety of usages. For instance, you could remove a value from the stack based on user input as follows:]
-  [irepl
+  [repl
   'apple' 'banan' 'coconut' input >>x filter {!= $x}
   coconut
   ]
+  [hint Isn't that much nicer than what we had for the previous challenge.]
   [p You can bind to a variable again to change it's value.]
   [repl
   1 >>x 2 >>x
@@ -897,7 +894,7 @@ Command: exit
     1 2 3 map {+ 1}
     incr: {+ 1} 1 2 3 map $incr
   ]
-  [p I haven't said it explicitly yet, but using a variables name without any prefix/suffix will 'call' that variable, which is how we've been using functions all along. In the case of a closure this will execute it, for other values it will just push it.]
+  [p Using a variables name without any prefix/suffix will 'call' that variable, which is how we've been using functions all along. In the case of a closure this will execute it, for other values it will just push it.]
   [repl
   f: {'hello there!' print} x: 32
   f
@@ -912,14 +909,13 @@ Command: exit
   [p Note that sigbinds bind in reverse order (much like nested prebinds do), so the rightmost sigbind is bound first (i.e. is the value on top of the stack).]
 ]
 
-todo: find somewhere earlier to mention dot ...
 [challenge
   [p Write a function [code revn] that, given a number N on top of the stack, reverses the top N values only.]
   [case
   'abcde' open 3 revn
   'a' 'b' 'e' 'd' 'c'
   ]
-  [p Hint: the [code dot ...] special function will be useful.]
+  [hint The [code dot ...] special function will be useful.]
   [answer
   [repl
   revn: {n => reverse(dot $n)}
@@ -936,16 +932,19 @@ todo: find somewhere earlier to mention dot ...
 
 [bite contexts
   [p Earlier I mentioned that all variables are bound within a context. These contexts can also be manipulated as values in Fruity. To access the context of the currently running code, use the [code this] keyword.]
+  [clrrepl2]
   [repl
-  {32 >>x this} apply
+  32 >>x this
   ]
+  [clrrepl]
+  [p The 'inherited' part there refers to all the variables bound outside the context that are still accessible from it.]
   [p Beware, if you bind a context to a variable within itself and then try and print that context on the repl, it will crash from infinite recursion.]
   [p Manipulating contexts like this allows us to imitate objects from other languages like JavaScript, and so there is a short hand syntax for creating them:]
   [repl
   :{x: 32 y: 'yes'}
   :{'james' >>name 32 >>age}
   ]
-  [p Note that inside the braces is just a regular closure that gets executed immediately, and pushes it's context once it is done. However this is not exactly equivalent to the [code {... this} apply] example we saw earlier, the differences will be explained in the next bite.]
+  [p Inside the braces is just a regular closure that gets executed immediately, and pushes it's context once it is done. However this is not exactly equivalent to the [code {... this} apply] example we saw earlier - notice the lack of inherited variables.]
   [p There are also a series of functions to manipulate contexts programatically. These correspond to each of the variable operations we've seen so far:]
   [repl
   j: :{'james' >>name 32 >>age}
@@ -1004,7 +1003,7 @@ todo: find somewhere earlier to mention dot ...
   [repl
     'a,b,c' .split(',')
   ]
-  [p The particularly astute might notice that implementing such a function is impossible given what's been covered so far.]
+  [note The particularly astute might notice that implementing such a function is impossible given what's been covered so far.]
   [p If we had a series of nested objects, typing a series of variable accesses would quickly become cumbersome, and if you haven't noticed yet half of Fruity's syntax is just syntactic sugar to make the other half look more like JavaScript, so of course there's a short hand for this.]
   [repl
   a: :{b: :{c: 32}}
@@ -1073,13 +1072,22 @@ todo: find somewhere earlier to mention dot ...
   $juan.age
   ]
   [p In the above example, since age was not bound in the juan context directly, it resolves to the value bound in the outer context, in the same way [code $age] within there would've resolved to age in the outer context.]
-  [p Notice that I did not use the object syntax (that is [code :{}]), but instead [code this] and [code apply]. That is because the object syntax would have a different outcome.]
+  [p When using object syntax, parenting works a bit differently.]
   [repl
   :{name: 'default' age: 0 :{name: 'juan'}} pop >>juan
   $juan.name
   $juan.age
   ]
-  [p Accessing [code $juan.age] causes an error as it is not bound. When using the object syntax, after executing the code the context's parent is changed to [code nil] (i.e. no parent).]
+  [p Accessing [code $juan.age] causes an error as it is not bound. When using the object syntax, after executing the code the context's parent is changed to [code nil] (i.e. no parent). However, the parent of the context is the outer scope while it is being executed.]
+  [repl
+  parent: :{x: 42 f: {y: $x this}}
+  $parent
+  $parent.f apply
+  ]
+  [p Here we have a function declared within an object. The function pushes it's own context, so that's what we see on the final line. We can see the bound [code y], but also the inherited [code x] and [code f]. For... uh... 'reasons', the contents of [code f] doesn't quite show up. The inherited fields are displayed as greyed out in the REPL to make them distinct. Also, notice that it does not inherit all the global functions, so they could not be used within [code f].]
+  [repl
+  :{f: {1 2 add}} .f
+  ]
   [p There are functions to manually inspect and change a context's parent.]
   [repl
   child: :{x: 2}
@@ -1090,12 +1098,12 @@ todo: find somewhere earlier to mention dot ...
   $child getp
   ?child.y
   ]
-  [p There is also a special function to change a context's parent.]
+  [p [code getp] can also be used to get the context in which a closure was pushed (i.e. the context that will be the parent of it's own context when executed). There is also a special function to change a context's parent.]
   [repl
   parent: :{y: 10}
   :{x: 20} as $parent
   ]
-  [p Note that, unlike [code setp], using the [code as ...] special function leaves the context on the stack, making it convenient when writing constructor-like functions:]
+  [p Unlike [code setp], using the [code as ...] special function leaves the context on the stack, making it convenient when writing constructor-like functions:]
   [repl
   proto_person: :{name: 'Prototype' age: nil occu: nil}
   make_person: {:{>>name} as $proto_person}
@@ -1105,26 +1113,18 @@ todo: find somewhere earlier to mention dot ...
 ]
 
 [challenge Personal Info III
-  [p Write a function that, given a string containing personal info, creates a context from it. Values that are not present should have default values from a parent context. Assume the first value is always name, second age, and third occupation.]
-  [pcase
+  [p Write a function that, given a string containing personal info, creates a context from it. Values that are not present should have default values inherited from a parent context. Assume the first value is always name, second age, and third occupation.]
+  [repl P: :{name: 'Unknown' age: '???' occu: 'None'} fromp: {.split(' ') filter {len > 0} reverse p: :{} empty else {>>p.name} empty else {int >>p.age} empty else {>>p.occu} $p as $P}
   'Greg 64 Plumber' fromp
-  :{name: 'Greg' age: 64 occu: 'Plumber'}
-  ]
-  [pcase
+  'Julia 32' fromp
   'Juan' fromp
-  :{name: 'Juan' age: '???' occu: 'None'}
-  ]
-  [pcase
   '' fromp
-  :{name: 'Unknown' age: '???' occu: 'None'}
   ]
   [answer
   [repl
   proto_person: :{name: 'Unknown' age: '???' occu: 'None'}
   fromp: {.split(' ') filter {len > 0} reverse p: :{} empty else {>>p.name} empty else {>>p.age} empty else {>>p.occu} $p as $proto_person}
   'Greg 64 Plumber' fromp
-  'Juan' fromp
-  '' fromp
   ]
   [p First we split the string into words and filter out any empty parts with [code .split(' ') filter {len > 0}]. Then we [code reverse] the stack so the first part of the string is on top. Then for each of the fields we bind them if the stack is not yet empty, then finally we set the parent to a prototype object with default values we defined earlier.]
   ]
@@ -1161,11 +1161,11 @@ todo: find somewhere earlier to mention dot ...
 
 [challenge Personal Info IV
   [p Write a show method for the proto_person we defined earlier to print out a person's details]
-  [fcase
+  [pcase
   :{name: 'Greg' age: 64 occu: 'Plumber'} as $proto_person .show
   Greg 64 Plumber
   ]
-  [fcase
+  [pcase
   :{name: 'Juan'} as $proto_person .show
   Juan ??? None
   ]
@@ -1249,7 +1249,7 @@ todo: maybe lists in the middle of contexts for a break?
   {pop} safe
   {1 + 2} safe
   ]
-  [p Fruity defines 5 symbols for exceptions, these are: [code #unbound] for accessing an unbound variable, [code #underflow] when the stack doesn't have enough values for the operation, [code #type] when a value isn't of the expected type, [code #invalid] when a value is not in the range of acceptable input, and [code #internal] if something goes wrong internally. You are free to use other symbols in your own code.]
+  [p Fruity defines 5 symbols for exceptions, these are: [code #unbound] for accessing an unbound variable, [code #underflow] when the stack doesn't have enough values for the operation, [code #type] when a value isn't of the expected type, [code #invalid] when a value is not in the range of acceptable input, and [code #internal] if something goes wrong internally. You are free to use these or other symbols in your own code.]
 ]
 
 [challenge Try Execute
@@ -1282,7 +1282,7 @@ arguments (leave for later?)
   {} < {}
   :{x: 1} < :{y: 2}
   ]
-  [p For contexts, Fruity will attempt to resolve a variable called [code _cmp]. If it finds it, it will be invoked and it's result used to determine the ordering. It's output should mimic that of the [code <> ...] operator, where [code self] is the right hand side.]
+  [p For contexts, Fruity will attempt to resolve a variable called [code _cmp]. If it finds it, it will be invoked and it's result used to determine the ordering. It's output should mimic that of the [code <> ...] operator, where [code self] is the left hand side.]
   [repl
   a: :{x: 1}
   b: :{x: 2}
@@ -1299,19 +1299,20 @@ arguments (leave for later?)
   $a = $b
   $a != $b
   ]
-  [p The arithmetic operators can also be overloaded. Each of them looks up a symbol name equivalent to their function version prefixed by underscore (so, [code _add] for [code + ...], [code _mod] for [code % ...]). This is used by [code math.complex] to implement complex numbers using contexts.]
+  [p I call these underscore-prefixed methods 'metamethods', but the language doesn't recognise them as anything special. The arithmetic operators can also be overloaded. Each of them looks up a symbol name equivalent to the corresponding function (so, [code _add] for [code + ...], [code _mod] for [code % ...]). This is used by [code math.complex] to implement complex numbers using contexts.]
   [repl
   a._add: {other => :{x: ($self.x + $other.x)}}
   $a + $b
   math.complex(1 2) + math.complex(3 4)
+  math.complex(1 2) $._add
   ]
-  [p Finally, some common functions work the same way, for instance [code str], [code len] or [code open]. This is how they work across multiple types. Viewing their source reveals the symbol they use.]
+  [p Finally, some common functions use underscore-prefixed methods, for instance [code str], [code len] or [code open]. This is how they work across multiple types. Viewing their source reveals the symbol they use.]
   [repl
   $len
   a._len: {$self.x}
   $a len
   ]
-  [p Usually these will be bound to a parent object that is shared amongst all objects. As an example, here is how we might implement a 2d vector type with support for [code str], [code + ...], and [code open].]
+  [p Usually these methods will be bound to a parent object that is shared amongst all objects. As an example, here is how we might implement a 2d vector type with support for [code str], [code + ...], and [code open].]
   [repl
   Vec2: :{}
   vec2: {:{x y =>} as $Vec2}
@@ -1332,17 +1333,13 @@ arguments (leave for later?)
 
 [challenge It's That Time Again
   [p Implement a function, [code hour], that given an hour from 0 to 23 creates a context. This context should support addition, subtraction, equality, and [code str]. The string produced should be in 12 hour time. Internal implementation is up to you.]
-  [fcase
+  [repl Hour: :{} hour: {% 24 dup < 0 then {+ 24} :{v =>} as $Hour} Hour._add: {$self.v + $.v hour} Hour._sub: {$self.v - $.v hour} Hour._eq: {$self.v = $.v} Hour._str: {$self.v dup >= 12 then {- 12 true} else false swap dup = 0 then {+ 12} cat(. . then 'pm' else 'am')}
   23 hour str
-  '11pm'
-  0 hour
-  '12am'
-  hour(2) + hour(6)
-  '8am'
-  hour(2) - hour(6)
-  '8pm'
+  0 hour str
+  hour(2) + hour(6) str
+  hour(2) - hour(6) str
   hour(2) = hour(14)
-  false
+  hour(0) = (hour(23) + hour(1))
   ]
   [answer
   [repl
@@ -1359,9 +1356,15 @@ arguments (leave for later?)
   ]
 ]
 
-[bite modules
+[bite Modules II
 ]
 [challenge todo list 2.0
 ]
 
-cheat sheet?
+[bite What Next?
+  [p like congrats or something.]
+  todo: talk about useful modules
+]
+[challenge
+  do a thing.
+]
