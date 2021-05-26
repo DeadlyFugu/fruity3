@@ -75,6 +75,7 @@ ds.Dict.entries: {$self.l open}
 ds.Dict.keys: {($self.l open map {$.head})}
 ds.Dict.values: {($self.l open map {$.tail})}
 ds.Dict._open: {($self.l open map $open)}
+ds.Dict._len: {$self.l len}
 ds.Dict._str: {cat('ds.dict(' ($self .entries map {p => cat($p.head ' -> ' $p.tail)} join '; ') ')')}
 ds.Dict._rep: {cat('ds.dict(' ($self open join ' ') ')')}
 ds.Dict._visit: {.openable('ds.dict' self)}

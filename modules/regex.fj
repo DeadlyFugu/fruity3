@@ -11,6 +11,15 @@ regex.match: { pattern s =>
     )
 }
 
+regex.match_all: { pattern s => (
+    $pattern $s pcre2.match_all
+    map {list(
+        . open zip {s.sub}
+        size > 1 then {under pop}
+        empty then nil
+    ) dup len = 1 then $open}
+)}
+
 _test: {
     regex.match('^[\\s]*(.*?)[\\s]*$' '   hello world!  ')
 }

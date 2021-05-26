@@ -51,6 +51,7 @@ print_ex: { ex =>
             pop pop
             map { t =>
                 // todo: properly
+                // todo: show file name
                 ?t.source then {print($t.source >>s
                     crayons.faint! '@ '
                     s.sub(0 $t.begin - 1)

@@ -5,3 +5,4 @@ modules/mod*.so
 .clangd
 attic
 web/out
+web/hello.txt

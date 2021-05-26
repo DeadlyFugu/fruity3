@@ -5,6 +5,7 @@ files: :{}
 
 files.read: $builtin.read
 files.write: $builtin.write
+// todo: files.append?
 files.ls: {
     (. builtin.dir filter {.get(0) != '.'})
 }

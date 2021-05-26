@@ -720,7 +720,7 @@ todo: maybe briefly introduce functions before this?
   [mono_block $ fp hello.fj
 Hello, world!]
   [p You can use [mono fp -h] to see available options, but usually you shouldn't need them.]
-  [p Fruity code is organised into modules, each of which is generally represented by a single file. Writing your own modules will be covered later, but for now it's useful to know that there are several modules provided by Fruity. You can import a module into a file using [code import module_name], for instance [code import files] to import the [code files] module.]
+  [p Fruity code is organised into modules, each of which is generally represented by a single file. Fruity provides several modules providing various utilities. You can import a module into a file using [code import module_name], for instance [code import files] to import the [code files] module. The module will get loaded the first time it is imported, subsequent imports will refer to a cached copy.]
   [mono_bhl import math _NL_ print(1 2 3 math.sum)]
   [p Note that in the REPL, the [code math] and [code ds] modules are imported by default. We have seen some functions from the [code math] module already (those prefixed by [mono math.]). When writing code in [mono .fj] files, you need to import these explicitly before using any functions from them.]
   [p All of the functions you've seen so far (other than the math ones) are from the [code dragon] module, which is the standard library for Fruity. It's functions are available globally, but you can also access them by explicitly importing the dragon module.]
@@ -737,13 +737,13 @@ Hello, world!]
   [repl
   'abc' lsv // todo: this doesn't work yet lol
   ]
-  [p In fact, you can just do [code $math] like we did for viewing the source of a function, but for most modules it's a bit verbose.]
+  [p In fact, you can just do [code $math] like we did for viewing the source of a function, but for most modules it's quite verbose.]
   [repl
   $math
   ]
 ]
 
-[challenge Fruitilicious Todo I?
+[challenge Fruitilicious Todo I
   [p For this challenge your goal is to make a todo list app. It only needs three features: adding to the list, seeing what's on the list, and removing from the list. Since this is quite a bit more complex than previous challenges, it is expected that you do this in a [mono .fj] file (although nobody's stopping you from doing a one-liner in the REPL if you want...)]
   [p An example interaction might be as follows:]
   [mono_block $ fp todo1.fj
@@ -763,7 +763,7 @@ Command: list
 Command: exit]
   [p You don't have to copy this exactly, but it demonstrates the basic idea. Feel free to add in additional features if you want.]
   [p Warning: Implementing the remove command is a quite brutal without the content of the next bite, but a fun challenge. No shame in skipping that part if you find it too hard.]
-  [p Hint: Use the stack to store your todos. 'add' should be rather straightforward.]
+  [hint Use the stack to store your todos. 'add' should be rather straightforward.]
   [answer
 <pre><code><span class="keyword">print!</span> <span class="string">'Welcome to my Fruitilicious Todo App!!!'</span>
 <span class="keyword">print!</span> <span class="string">'The commands are: \'add\', \'list\', \'remove\' or \'exit\''</span>
@@ -774,7 +774,8 @@ Command: exit]
         <span class="fn">pop</span>
         <span class="string">'Task: '</span> <span class="fn">prompt</span>
         <span class="sym">#ok</span>
-    } <span class="fn">dup</span> <span class="keyword">=</span> <span class="string">'list'</span> <span class="keyword">then</span> {
+    }
+    <span class="fn">dup</span> <span class="keyword">=</span> <span class="string">'list'</span> <span class="keyword">then</span> {
         <span class="fn">pop</span>
         <span class="keyword">map</span> {<span class="string">'- '</span> <span class="fn">printw</span> <span class="fn">dup</span> <span class="fn">print</span>}
         <span class="sym">#ok</span>
@@ -807,12 +808,13 @@ Command: exit]
 
 [bite Variables
   [p Trying to write larger programs in Fruity, it quickly becomes apparent that just the stack is insufficient for storing all the values you need. Many other languages have variables, which allow you to assign a name to a value and then retrieve it again later by name.]
-  [p Fruity is no different. You can bind (create) a variable with [code >>var], and get it (retrieve the value) with [code $var].]
+  [p Fruity is no different. You can pop a value off the stack and bind it to a variable with [code >>var], and get the value and push it to the stack with [code $var]. Accessing a variable that has not been bound is an error.]
   [repl
   'Jason' >>name
   $name
+  $age
   ]
-  [p Variables have a wide variety of usages. For instance, you could remove a value from the stack based on user input as follows:]
+  [p Variables have a wide variety of usages. For instance, you could filter values from the stack based on user input as follows:]
   [repl
   'apple' 'banan' 'coconut' input >>x filter {!= $x}
   coconut
@@ -823,24 +825,24 @@ Command: exit]
   1 >>x 2 >>x
   $x
   ]
-  [p It's worth noting that, like in many other languages, variables are scoped in Fruity. In Fruity, these scopes are called contexts, and will be explained in a lot more depth later. Each closure (that is, the code within curly braces) defines it's own context. Variables from outside the context can be accessed, but binding will create a new variable in the current context instead.]
+  [p Like in many other languages, variables are scoped in Fruity. In Fruity, scopes are reified as 'contexts', which will be explained in a lot more depth later. For now, when you see 'context' think scope. Each closure (that is, the code within curly braces) defines it's own context. Variables from outside the context can be accessed, but binding will create a new variable in the current context instead.]
   [repl
   1 >>x true then {2 >>x}
   $x
   ]
-  [p In the above, [code $x] still had the value 1, as 2 was only bound within the context of the closure passed to [code then ...]. If you do want to modify a variable bound in an outer closure, you can use the set operation.]
+  [p In the above, [code $x] still had the value 1, as 2 was only bound within the context of the closure passed to [code then ...]. If you do want to modify a variable bound in an outer closure, you can use the set syntax.]
   [repl
   1 >>x true then {2 >x}
   $x
+  3 >y
   ]
-  [p The set syntax can also be used to modify variables bound in the current context (and customarily is, to make it distinct from binding). Beware that it is an error to set a variable that has not already been bound.]
+  [p The set syntax can also be used to modify variables bound in the current context (and customarily is, to make it distinct from binding). It is an error to set a variable that has not already been bound.]
   [p Finally, there is also a syntax to check if a variable has been bound, by preceeding it with '?'.]
   [repl
   ?mychild
   'thou shalt be defined' >>mychild
   ?mychild
   ]
-  [p This does not seem immediately useful, but we'll see examples of it later.]
   [p Finally it is worth noting that, similar to the precall syntax, there is also a prebind syntax for variables.]
   [repl
   x: 2
@@ -848,18 +850,14 @@ Command: exit]
   y: (2 * 3)
   $y
   ]
-  [p Note that since it only takes the next syntactic unit as it's value, you will need to create a group for anything longer.]
+  [p Since it only takes the next syntactic unit as it's value, you need to create a group for anything longer.]
 ]
 
 [challenge Personal Info I
   [p Write a program that, given a name, age, and occupation, prints it out in the following format.]
-  [pcase
-  'Greg' 64 'Plumber'
-  Greg (64). Occupation: Plumber
-  ]
-  [pcase
-  'Juan' '???' 'Unknown'
-  Juan (???). Occupation: Unknown
+  [repl _USER_: {>>occu >>age >>name $name ' (' $age '). Occupation: ' $occu cat print}
+  'Greg' 64 'Plumber' _USER_
+  'Juan' '???' 'Unknown' _USER_
   ]
   [p Although this can be done entirely using stack operations and such, it is much easier to read using named variables.]
   [answer
@@ -867,7 +865,7 @@ Command: exit]
   'Greg' 64 'Plumber' >>occu >>age >>name $name ' (' $age '). Occupation: ' $occu cat print
   ]
   [p First we bind each part to a variable, then we push them to the stack one at a time in between the other parts of the message. Note that the variables are bound in reverse order to the values, that's because each will take the top value (so [code >>occu] will store [code 'Plumber'], as it's the top, and then [code >>age] will store [code 64] as it's the new top, etc.).]
-  [p Interestingly, if you use prebind syntax in a nested way, you don't need to reverse the order, as the rightmost prebind is evaluated first.]
+  [p If you use nested prebinds instead, you don't need to reverse the order, as the rightmost prebind is evaluated first.]
   [repl
   'Greg' 64 'Plumber' (name: age: occu: ...) $name ' (' $age '). Occupation: ' $occu cat print
   ]
@@ -900,22 +898,21 @@ Command: exit]
   f
   x
   ]
-  [p There is also a third syntax for binding variables at the beginning of a closure, called signature binding (sigbinding). This is commonly used when defining functions to give them a clear signature (expected input), but it can be used with any closure (they're all the same, after all). It looks as follows:]
+  [p There is also a third syntax for binding variables at the beginning of a closure, called signature binding (sigbinding). This is commonly used when defining functions to give them a clear signature, but it can be used with any closure (they're all the same, after all). It looks as follows:]
   [repl
   1 2 3 fold {x y => $x + $y}
   show_person: {name age => print($name ' (' $age ')' cat)}
   show_person('james' 32)
   ]
-  [p Note that sigbinds bind in reverse order (much like nested prebinds do), so the rightmost sigbind is bound first (i.e. is the value on top of the stack).]
+  [p Sigbinds bind in reverse order, much like nested prebinds do, so the rightmost sigbind is bound first (i.e. is the value on top of the stack).]
 ]
 
 [challenge
   [p Write a function [code revn] that, given a number N on top of the stack, reverses the top N values only.]
-  [case
+  [repl revn: {n => reverse(dot $n)}
   'abcde' open 3 revn
-  'a' 'b' 'e' 'd' 'c'
   ]
-  [hint The [code dot ...] special function will be useful.]
+  [hint Remember the [code dot ...] special function?]
   [answer
   [repl
   revn: {n => reverse(dot $n)}
@@ -939,12 +936,15 @@ Command: exit]
   [clrrepl]
   [p The 'inherited' part there refers to all the variables bound outside the context that are still accessible from it.]
   [p Beware, if you bind a context to a variable within itself and then try and print that context on the repl, it will crash from infinite recursion.]
-  [p Manipulating contexts like this allows us to imitate objects from other languages like JavaScript, and so there is a short hand syntax for creating them:]
+  [p Manipulating contexts like this allows us to imitate objects from other languages like JavaScript, and so there is a short hand syntax for creating them.]
   [repl
   :{x: 32 y: 'yes'}
-  :{'james' >>name 32 >>age}
   ]
-  [p Inside the braces is just a regular closure that gets executed immediately, and pushes it's context once it is done. However this is not exactly equivalent to the [code {... this} apply] example we saw earlier - notice the lack of inherited variables.]
+  [p This will often be called an 'object', but it's only syntactic sugar. It is equivalent to:]
+  [repl
+  {x: 32 y: 'yes' this} apply as nil
+  ]
+  [p Inside the braces is just a regular closure that gets executed immediately, and one it's done it pushes its context. It also wipes the inherited variables - this is what [code as nil] does.]
   [p There are also a series of functions to manipulate contexts programatically. These correspond to each of the variable operations we've seen so far:]
   [repl
   j: :{'james' >>name 32 >>age}
@@ -954,11 +954,12 @@ Command: exit]
   $j
   $j #occupation hasv
   ]
-  [p Note that variable names are represented as symbols, not strings.]
-  [p Additionally, there is [code lsv] that we saw before briefly, which lists each of the variables bound within a context:]
+  [p Variable names are always represented as symbols, not strings.]
+  [p Additionally, there is [code lsv] that we saw before briefly, which lists each of the variables bound within a context.]
   [repl
   $j lsv
   ]
+  [p There is also [code hasb] and [code lsb], which behave like their [mono -v] counterpart, but ignore inherited variables (b is for 'bound').]
   [p All of the globally available functions are bound in a special context called [code root]. Because [code root] is bound within itself, it can't be printed directly in the REPL.]
   [repl
   $root
@@ -973,10 +974,8 @@ Command: exit]
 
 [challenge
   [p Write a function that, given a context, prints each variable bound in the following manner:]
-  [pcase
+  [repl pctx: {c => ($c lsv map {s => cat($s ' -> ' $c $s getv rep) print})}
   :{x: 32 y: 'fish'} pctx
-  #x -> 32
-  #y -> 'fish'
   ]
   [p Use [code rep] to display the value.]
   [answer
@@ -1003,7 +1002,7 @@ Command: exit]
   [repl
     'a,b,c' .split(',')
   ]
-  [note The particularly astute might notice that implementing such a function is impossible given what's been covered so far.]
+  [hint The particularly astute might notice that implementing such a function is impossible given what's been covered so far.]
   [p If we had a series of nested objects, typing a series of variable accesses would quickly become cumbersome, and if you haven't noticed yet half of Fruity's syntax is just syntactic sugar to make the other half look more like JavaScript, so of course there's a short hand for this.]
   [repl
   a: :{b: :{c: 32}}
@@ -1026,18 +1025,14 @@ Command: exit]
   [repl
   1 2 3 $math .sum
   ]
-  [p Importing also allows you to alias the import using the syntax [code import module as alias], which simply binds under the given alias. You can also import a specific value from within a module using [import module.key], for instance we could do [import math.sum] which would bind the closure for the sum function to [code sum] in the current context.]
+  [p Importing also allows you to alias the import using the syntax [code import module as alias], which simply binds under the given alias. You can also import a specific variable from within a module using [code import module.key], for instance we could do [code import math.sum] which would bind the closure for the sum function to [code sum] in the current context.]
 ]
 
 [challenge Personal Info II
   [p Write a function that, given a context containing name, age, and occupation, prints it out in the following format. The age or occupation may be missing, in which case you should omit those parts.]
-  [pcase
+  [repl showp: {p => print($p.name ?p.age then {$p.age} ?p.occu then {$p.occu} join ' ')}
   :{name: 'Greg' age: 64 occu: 'Plumber'} showp
-  Greg 64 Plumber
-  ]
-  [pcase
   :{name: 'Juan'} showp
-  Juan
   ]
   [answer
   [repl
@@ -1045,12 +1040,12 @@ Command: exit]
   :{name: 'Greg' age: 64 occu: 'Plumber'} showp
   :{name: 'Juan'} showp
   ]
-  [p We can access each of the fields using [code $p.name], [code $p.age], and [code $p.occu]. For the latter two we first check their existence with the '?' prefix. I said earlier we'd eventually find a use for this syntax - well here it is.]
+  [p We can access each of the variables using [code $p.name], [code $p.age], and [code $p.occu]. For the latter two we first check their existence with the '?' prefix.]
   ]
 ]
 
 [bite parenting
-  [p In Fruity, contexts may have another context specified as their 'parent'. If a variable is looked up on a context and isn't found, then it will try and resolve it in the parent context. This is how, for example, the variable [code x] can be resolved in the following code:]
+  [p In Fruity, contexts may have another context specified as their 'parent'. If a variable can't be found, then it will try and resolve it in the parent context. This is how, for example, the variable [code x] is resolved in the following code:]
   [repl
   x: 32 true then {$x print}
   ]
@@ -1064,46 +1059,34 @@ Command: exit]
   add40(7)
   ]
   [p Here, the [code add2] function's parent is a context where [code x: 2], meanwhile the [code add40] function's parent is a context where [code x: 40], so although they both contain the exact same code they produce different results.]
-  [p It's worth noting that the root context containing functions like [code swap] and [code dup] is usually the 'highest' parent of every closure, which is how they can access these functions. This is important to keep in mind when modifying these parents, and there'll be an example of how this could go wrong in the next bite.]
-  [p When we're using contexts like objects, this can be used to achieve prototype style inheritance, like you'd see in JavaScript or Lua.]
+  [p It's worth noting that the root context containing functions like [code swap] and [code dup] is usually the 'highest' parent of every closure, which is how they can access these functions. If the series of parents gets broken, these functions can no longer be accessed.]
+  [p You may recall from earlier that objects 'wipe' their inherited variables. This is achieved by removing their parent (these inherited variables are just variables defined on their parent or their parent's parent etc.). This will however impact any functions declared within the object. The next bite will cover the trick for getting around this.]
   [repl
-  {name: 'default' age: 0 {name: 'juan' this} apply} apply >>juan
-  $juan.name
-  $juan.age
+  jason: :{name: 'Jason' greet: {print('hey im ' $name '!' cat)}}
+  $jason
+  jason.greet
   ]
-  [p In the above example, since age was not bound in the juan context directly, it resolves to the value bound in the outer context, in the same way [code $age] within there would've resolved to age in the outer context.]
-  [p When using object syntax, parenting works a bit differently.]
+  [p In the above example, [code jason.greet] can only access [code name] and [code greet]. It does not inherit the functions from [code root], so [code print] is unavailable. We could (awkwardly) get around this with an explicit import.]
   [repl
-  :{name: 'default' age: 0 :{name: 'juan'}} pop >>juan
-  $juan.name
-  $juan.age
+  jason: :{name: 'Jason' greet: {import dragon dragon.print('hey im ' $name '!' dragon.cat)}}
+  jason.greet
   ]
-  [p Accessing [code $juan.age] causes an error as it is not bound. When using the object syntax, after executing the code the context's parent is changed to [code nil] (i.e. no parent). However, the parent of the context is the outer scope while it is being executed.]
-  [repl
-  parent: :{x: 42 f: {y: $x this}}
-  $parent
-  $parent.f apply
-  ]
-  [p Here we have a function declared within an object. The function pushes it's own context, so that's what we see on the final line. We can see the bound [code y], but also the inherited [code x] and [code f]. For... uh... 'reasons', the contents of [code f] doesn't quite show up. The inherited fields are displayed as greyed out in the REPL to make them distinct. Also, notice that it does not inherit all the global functions, so they could not be used within [code f].]
-  [repl
-  :{f: {1 2 add}} .f
-  ]
-  [p There are functions to manually inspect and change a context's parent.]
+  [p The functions [code getp] and [code setp] are used to manually inspect and change a context's parent. We can use this to imitate the prototypal inheritance seen in languages like Lua or JavaScript. In the REPL's display, inherited variables appear in gray.]
   [repl
   child: :{x: 2}
   $child getp
-  ?child.y
+  $child
   parent: :{x: 10 y: 20}
   $child $parent setp
   $child getp
-  ?child.y
+  $child
   ]
-  [p [code getp] can also be used to get the context in which a closure was pushed (i.e. the context that will be the parent of it's own context when executed). There is also a special function to change a context's parent.]
+  [p There is also the special function [code as ...] to change a context's parent.]
   [repl
   parent: :{y: 10}
   :{x: 20} as $parent
   ]
-  [p Unlike [code setp], using the [code as ...] special function leaves the context on the stack, making it convenient when writing constructor-like functions:]
+  [p Unlike [code setp], using [code as ...] leaves the child context on the stack, making it convenient when writing constructor-like functions:]
   [repl
   proto_person: :{name: 'Prototype' age: nil occu: nil}
   make_person: {:{>>name} as $proto_person}
@@ -1122,21 +1105,23 @@ Command: exit]
   ]
   [answer
   [repl
-  proto_person: :{name: 'Unknown' age: '???' occu: 'None'}
-  fromp: {.split(' ') filter {len > 0} reverse p: :{} empty else {>>p.name} empty else {>>p.age} empty else {>>p.occu} $p as $proto_person}
+  Person: :{name: 'Unknown' age: '???' occu: 'None'}
+  fromp: {.split(' ') filter {len > 0} reverse p: :{} empty else {>>p.name} empty else {>>p.age} empty else {>>p.occu} $p as $Person}
   'Greg 64 Plumber' fromp
   ]
-  [p First we split the string into words and filter out any empty parts with [code .split(' ') filter {len > 0}]. Then we [code reverse] the stack so the first part of the string is on top. Then for each of the fields we bind them if the stack is not yet empty, then finally we set the parent to a prototype object with default values we defined earlier.]
+  [p First we split the string into words and filter out any empty parts with [code .split(' ') filter {len > 0}]. Then we [code reverse] the stack so the first part of the string is on top. Then for each of the variables we bind them if the stack is not yet empty, then finally we set the parent to a prototype object with default values we defined earlier.]
+  [p By convention, I usually name prototype objects with a capital letter to distinguish them from the constructor.]
+  [p Honestly most of the difficulty in this challenge has nothing to do with parenting, I should probably change it.]
   ]
 ]
 
 [bite Self
   [p Earlier I mentioned that the [code .split] method on strings is impossible given what we know so far. So how is it implemented? Let's take a look.]
   [repl
-  'ive turned myself into a string morty' $.split
+  'im a string' $.split
   ]
   [p We can see that it sigbinds the delimeter to delim, pushes a variable called [code $self], pushes [code $delim], then calls [code builtin.strsplit], which is a C function that implements string splitting.]
-  [p Of interest to us is that first variable, [code $self]. That variable is not bound in the closure or any of it's parent contexts - we can show that with the following:]
+  [p Of interest to us is that first variable, [code $self]. That variable is not bound in the closure or any of it's parent contexts - we can show that with the following ([code getp] on a closure returns the context that will be it's parent when it executes):]
   [repl
   'abc' $.split getp ?.self
   ]
@@ -1155,26 +1140,22 @@ Command: exit]
   fox: (:{name: 'fox' sound: '???'} as $Animal)
   dog.show catto.show fox.show
   ]
-  [p Fun fact: Originally I used [code cat] instead of [code catto] and then later on I was wondering why a later bite messed up when I used the [code cat] function. Be careful using global function names, yo!]
-  [p Importantly, we define the method outside of the object syntax for Animal. If we defined the function within the [code :{}] of Animal, it would have Animal set as it's parent. Since Animal will have it's parent set to [code nil] by the object syntax, the function will not be able to resolve global variables like [code print] and [code dup]. A similar issue would occur with [code obj.show] from before, that function only works because it doesn't rely on any globally defined variables.]
+  [hint Originally I used [code cat] instead of [code catto] and then a later bite messed up when I used the [code cat] function. Be careful using global function names, yo!]
+  [p Importantly, we define the method outside of the object for Animal. If we defined the function within it, it would have Animal set as it's parent. Since Animal will have it's parent set to [code nil], the function will not be able to resolve global variables. A similar issue would occur with [code obj.show] from before, that function only works because it doesn't rely on any globally defined variables.]
 ]
 
 [challenge Personal Info IV
-  [p Write a show method for the proto_person we defined earlier to print out a person's details]
-  [pcase
-  :{name: 'Greg' age: 64 occu: 'Plumber'} as $proto_person .show
-  Greg 64 Plumber
-  ]
-  [pcase
-  :{name: 'Juan'} as $proto_person .show
-  Juan ??? None
+  [p Write a show method for the prototype person we defined earlier to print out a person's details]
+  [repl Person: :{name: 'Unknown' age: '???' occu: 'None'} Person.show: {print($self.name $self.age $self.occu join ' ')}
+  :{name: 'Greg' age: 64 occu: 'Plumber'} as $Person .show
+  :{name: 'Juan'} as $Person .show
   ]
   [answer
   [repl
-  proto_person: :{name: 'Unknown' age: '???' occu: 'None'}
-  proto_person.show: {print($self.name $self.age $self.occu join ' ')}
-  :{name: 'Greg' age: 64 occu: 'Plumber'} as $proto_person .show
-  :{name: 'Juan'} as $proto_person .show
+  Person: :{name: 'Unknown' age: '???' occu: 'None'}
+  Person.show: {print($self.name $self.age $self.occu join ' ')}
+  :{name: 'Greg' age: 64 occu: 'Plumber'} as $Person .show
+  :{name: 'Juan'} as $Person .show
   ]
   [p For this one we just need to access name, age, and occu relative to [code $self] and then join them with spaces.]
   ]
@@ -1182,7 +1163,7 @@ Command: exit]
 
 todo: maybe lists in the middle of contexts for a break?
 [bite Lists
-  [p Finally we can move on from contexts! Another really useful type in Fruity is the list. Using the [code list] function, every value on the stack will be 'compressed' into a single list value. This can be useful for storing and restoring stack later, or for more complex operations requiring several stacks at once.]
+  [p Finally we can move on from contexts! Another really useful type in Fruity is the list. Using the [code list] function, every value on the stack will be 'compressed' into a single list value. This can be useful for storing and restoring the stack later, or for more complex operations requiring several stacks at once.]
   [repl
   1 2 3 list
   1 2 3 list 4 5 list
@@ -1210,13 +1191,9 @@ todo: maybe lists in the middle of contexts for a break?
 
 [challenge Even Odds
   [p Write a function that given a stack of integers will reorder all the even numbers to be below all the odd numbers. It should otherwise preserve their orders.]
-  [case
+  [repl evenodd: {odds: list() map {dup % 2 = 1 then {odds.push}} $odds open}
   1 2 3 4 5 6 evenodd
-  2 4 6 1 3 5
-  ]
-  [case
   10 15 401 17 30 28 29 evenodd
-  10 30 28 15 401 17 29
   ]
   [answer
   [repl
@@ -1238,7 +1215,7 @@ todo: maybe lists in the middle of contexts for a break?
   [p Every exception has three parts. The key is a symbol that identifies what kind of exception this is. You can use this in your code to determine how to handle the exception. The message is a more detailed message intended only to be shown to humans. Finally, the trace is a list of lines of code that were being executed between where the exception was raised and where it was caught.]
   [p These exceptions can be caught by the [code catch ...] special function. This function will execute a closure from the stack. If the closure throws an exception, it will push a context containing information about that exception to the stack and then execute the closure on it's right.]
   [repl
-  {pop} catch {rep print}
+  {pop} catch {'caught a big one' print}
   ]
   [p You can throw your own exceptions with the [code throw] function.]
   [repl
@@ -1268,7 +1245,7 @@ todo: maybe lists in the middle of contexts for a break?
   {pop} try
   {1 + 2} try
   ]
-  [p The [code catch ...] special function already provides most of the functionality we need. In the case were an exception is thrown, we just extract the [code #key] variable from the exception context.]
+  [p The [code catch ...] special function already provides most of the functionality we need. In the case where an exception is thrown, we just extract the [code #key] variable from the exception context.]
   ]
 ]
 
@@ -1312,7 +1289,7 @@ arguments (leave for later?)
   a._len: {$self.x}
   $a len
   ]
-  [p Usually these methods will be bound to a parent object that is shared amongst all objects. As an example, here is how we might implement a 2d vector type with support for [code str], [code + ...], and [code open].]
+  [p Usually these methods will be bound to a parent object that is shared amongst all values of a custom type. As an example, here is how we might implement a 2d vector type with support for [code str], [code + ...], and [code open].]
   [repl
   Vec2: :{}
   vec2: {:{x y =>} as $Vec2}
@@ -1332,7 +1309,7 @@ arguments (leave for later?)
 ]
 
 [challenge It's That Time Again
-  [p Implement a function, [code hour], that given an hour from 0 to 23 creates a context. This context should support addition, subtraction, equality, and [code str]. The string produced should be in 12 hour time. Internal implementation is up to you.]
+  [p Implement a function, [code hour], that given an hour from 0 to 23 creates a context. This context should support addition, subtraction, equality, and [code str]. The string produced should be in 12 hour time. Internal representation is up to you.]
   [repl Hour: :{} hour: {% 24 dup < 0 then {+ 24} :{v =>} as $Hour} Hour._add: {$self.v + $.v hour} Hour._sub: {$self.v - $.v hour} Hour._eq: {$self.v = $.v} Hour._str: {$self.v dup >= 12 then {- 12 true} else false swap dup = 0 then {+ 12} cat(. . then 'pm' else 'am')}
   23 hour str
   0 hour str
@@ -1343,28 +1320,169 @@ arguments (leave for later?)
   ]
   [answer
   [repl
-  Hour: :{}
+  Hour: :{v: 0}
   hour: {% 24 dup < 0 then {+ 24} :{v =>} as $Hour}
   Hour._add: {$self.v + $.v hour}
   Hour._sub: {$self.v - $.v hour}
   Hour._eq: {$self.v = $.v}
   Hour._str: {$self.v dup >= 12 then {- 12 true} else false swap dup = 0 then {+ 12} cat(. . then 'pm' else 'am')}
   ]
-  [p In our constructor function we use [code % 24 dup < 0 then {+ 24}] to map the input into the range 0-23, then we create an object with [code $Hour] as it's parent.]
+  [p In our constructor function we use [code % 24 dup < 0 then {+ 24}] to map the input into the range 0-23, then we create an object with [code $Hour] as it's parent. We provide a default value of 0 for [code v] incase someone tries to use the prototype object directly.]
   [p Our [code _add], [code _sub], and [code _eq] implementations are pretty straighforward, as we just perform the operation on the [code $.v] value. We don't need to worry about wrapping around etc. as [code hour] handles that for us.]
   [p [code _str] is a bit more fun, first we check if it's in the afternoon, and if so we subtract twelve. We also push whether or not it was in the afternoon (this could also have been done by just duplicating the condition and some swapping). We use [code swap dup = 0 then {+ 12}] to change any zeroes to twelves, and finally form the string with [code cat].]
   ]
 ]
 
 [bite Modules II
+  [p Fruity provides a lot of modules with various functionality. In this bite we'll cover some of them and how they can be used. Most of the modules are currently incomplete, but the most basic functionality is there.]
+  [p The [code math] module contains a lot of mathematical functions. These should all be relatively familiar, and we've seen several already. You can get a full listing with [code $math lsv]]
+  [repl
+  $math lsv
+  math.sin(90)
+  2 * $math.pi
+  math.sqrt(25)
+  10 repeat {math.rand_range(1 100)}
+  math.median(4 2 1 6 5)
+  math.complex(1 1) * math.complex(0 2)
+  ]
+  [p The [code ds] module provides various data structures and some useful utility functions. [code ds.pair] is a pair of two values, [code ds.grid] is a 2d array, and [code ds.dict] is an associative array.]
+  [repl import ds
+  $ds lsv
+  ds.pair(2 'fish')
+  g: ds.grid(2 2)
+  g.fill(#a) g.set(0 0 #b)
+  g.row(0)
+  d: ds.dict(1 'one' 2 'two')
+  d.get(1)
+  d.keys
+  'cat' 'dog' 'fish' 'cat' 'cat' 'dog' ds.tally print
+  :{index: 2 s: 'Second'} :{index: 1 s: 'First'} :{index: 3 s: 'Third'} #index ds.sortkey
+  ]
+  [p The [code crayons] module provides various functions for formatting text on the terminal. The [code crayons.rep] function is what the REPL uses to display colored values.]
+  [repl
+  import crayons
+  crayons.blue('im blue dabadee dabadie') print
+  crayons.bold(crayons.red('oh no, error happen!')) print
+  crayons.rep(:{x: 32 y: list('fish' #sticks)}) print
+  ]
+  [p The [code files] module provides functions for working with the file system.]
+  [repl
+  import files
+  $files lsv
+  files.write('hello.txt' 'Hello, World!')
+  files.read('hello.txt') print
+  files.join('..' 'src')
+  files.ls('../src')
+  ]
+  [p The [code kiwi] module implements a basic markup language. This series of tutorials are actually generated entirely with Fruity, using this module for markup. This module was written back in 2015 and I'm not even fully sure how some of it works anymore.]
+  [repl
+  import kiwi
+  my_ctx: ($kiwi.ctx_base + :{})
+  my_ctx.bold: $crayons.bold
+  my_ctx.reverse: {cat(. open reverse)}
+  s: 'hello [lb]bold everyone[rb] my [lb]reverse name[rb] is [lb]bold mr [lb]reverse squirgle[rb][rb].'
+  $s $my_ctx kiwi.parse_string print
+  ]
+  [p The [code regex] module provides basic regex matching functionality using PCRE2.]
+  [repl
+  import regex
+  regex.match('l+' 'hello world')
+  regex.match_all('l+' 'hello world')
+  regex.match('\\.[lb]a-z[rb]{3}' 'my_file.txt')
+  regex.match('([lb]a-zA-Z0-9[rb]+)\\.(com|net|org)' 'sekien.net')
+  ]
+  [p Finally, the [code repl] module implements the default REPL you've been using. You can bypass this and use the builtin REPL with the [mono -f] command line option, if you like. This module provides some utilities, notably the [code minirepl] function that allows you to quickly make your own REPL-style interface.]
+  [repl
+  import repl
+  1 to 5 reverse
+  repl.prev map {+ 1}
+  {s => s.upper} repl.minirepl
+  hello
+  we come in peace
+  ]
+  [p The [code repl.prev] function pushes the contents of the stack from the previous line, or the exception if an exception was raised. This is useful for more iterative style programming, slowly trying each step one at a time. You don't need to import [code repl] for this, it is also bound as [code prev] by default.]
 ]
-[challenge todo list 2.0
+
+[challenge Car Spotters
+  [p Write a program to record the colors of cars that go by, and then print out the frequency of each color in order. The first one should be bolded, and each color should be colored appropriately if [code crayons] has a function of that name.]
+  [mono_block $ ./fp carfreq.fj 
+Enter in the colors you saw.
+use ctrl-d to exit minirepl
+- red
+- green
+- blue
+- orange
+- green
+- blue
+- white
+- red
+- red
+- <span class="comment">&lt;ctrl-d&gt;</span>
+5 unique colors:
+<span class="var bold">3 red cars</span>
+<span class="sym">2 blue cars</span>
+<span class="string">2 green cars</span>
+1 white car
+1 orange car]
+  [answer
+  [mono_bhl import repl.minirepl _NL_
+import crayons _NL_
+import ds _NL_
+ _NL_
+print('Enter in the colors you saw.') _NL_
+ _NL_
+plural: {s => = 1 then $s else {cat($s 's')}} _NL_
+ _NL_
+colors: list() _NL_
+minirepl! {colors.push} _NL_
+ _NL_
+$colors open ds.tally .entries ds.sortkey! #tail _NL_
+ _NL_
+map { p => _NL_
+_TAB_ cat($p.tail $p.head $p.tail 'car' plural join ' ') _NL_
+_TAB_ hasv($crayons $p.head sym) then {getv($crayons $p.head sym) apply} _NL_
+} _NL_
+ _NL_
+empty else $crayons.bold _NL_
+ _NL_
+size print(. dup ' unique color' plural ':' cat) _NL_
+reverse map $print]
+  [p First we import the modules we'll be using. Since we only need [code minirepl] from [code repl] we'll just import it directly.]
+  [p We use [code minirepl] to get colors from the user and push each of them into a list.]
+  [p We use [code ds.tally] to determine the frequency of each color, and then [code ds.sortkey] to put them into order.]
+  [p We then map over each value making a string out of it. We check if [code crayons] has a value corresponding to the given name and call it. This leads to weird behaviour if the user enters [mono bg] or [mono rep] as a color but oh well.]
+  [p We bold the first line (top of stack) with [code crayons.bold], then finally print them all out with a map.]
+  ]
+]
+
+[bite Modules III
+  [p Fruity looks for modules in various directories. By default, it will search the following directories:]
+  [mono_block /usr/local/lib/fruity
+~/.local/lib/fruity]
+  [p You can add additional paths to search on with the [mono -M] option via the commandline.]
+  [mono_block $ fp -M .
+$ fp -M ../modules]
+  [p When executing a statement like [code import mymod], first it will look for a file called [mono mymod.fj] in the first path. If it can't find it, it will look for a file called [mono modmymod.so]. It will then repeat this for the next path and so on until a file is found or all paths are exhausted.]
+  [p If the file found is a [mono .so] file, it will be loaded as a native module. The internal API is not yet stable (aka it's a complete mess), but you can see some examples of how these can be written by looking at the [mono src/modules] directory of the distribution.]
+  [p If the file found is a [mono .fj] file, it will execute the content of that module in a new context, and cache the resulting context as the module to then be bound by the import statement. If the context has the variable [code _export] bound, it will cache that instead. This can be used to implement basic encapsulation, by defining variables you want to export on a separate object and binding that to [code _export].]
+  [mono_bhl
+  _export: :{} _NL_
+  rev_str: {s => cat($s open reverse)} _NL_
+  _export.rev_words: {s => _NL_
+  _TAB_ (s.split(' ') map $rev_str join ' ') _NL_
+  } _NL_
+  ]
+  [p The above module would export the function [code rev_words], but [code rev_str] would not. The encapsulation isn't perfect, [code rev_str] could still be accessed by doing [code $.rev_words getp $.rev_str].]
+  [p When a file is invoked directly from the commandline (or by the [mono -m] option), it will have the variable [code _main] bound. You can check the presence of this to optionally do something when a file is ran as main. The [code crayons] module uses this to display a test message - try it with [mono $ fp -m crayons].]
+]
+[challenge Fruitilicious Todo II
+  [p Imrpove on your todo list from before. Use the features you've learnt like lists and variables to simplify your code. Feel free to make this as simple or as complex as you'd like. How much can you improve it over your first one? Maybe some fancy colors with [code crayons], or persistence with [code files]?]
 ]
 
 [bite What Next?
-  [p like congrats or something.]
-  todo: talk about useful modules
+  [p Congratulations, if you've followed the tutorials up to here then your probably the only other person in the world who knows this language! This is more of a toy language, so it's not particularly useful for writing large programs, but I've found various uses for it over the years just for simple scripts or answering random questions (like, whats the sum of the first 10 prime numbers?).]
+  [p If you want to learn more, you can look through some of the example programs, as well as the source to the various modules.]
 ]
 [challenge
-  do a thing.
+  [p Make something cool, or contribute back to Fruity itself! There's still lots of work to be done and testing needed. Feedback is always welcome, too.]
 ]

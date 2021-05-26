@@ -29,6 +29,7 @@ crayons.bg.magenta: {45 wrap}
 crayons.bg.cyan:    {46 wrap}
 crayons.bg.white:   {47 wrap}
 
+// todo: currently this doesnt work when combined with bold or invert
 rainbow: list(
     $crayons.red $crayons.yellow $crayons.green
     $crayons.cyan $crayons.blue $crayons.magenta)

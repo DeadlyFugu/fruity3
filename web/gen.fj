@@ -36,6 +36,9 @@ _asciiToSpan: list(
     cat($_e '[2m') _s! 'comment'
     cat($_e '[1m') _s! 'bold'
     cat($_e '[36m_USER_') cat(_s! 'comment' '&lt;your code here&gt;')
+    cat($_e '[36m_TAB_</span> ') '    '
+    cat($_e '[36m_NL_</span> ') '\n'
+    cat(' ' $_e '[36m_NL_</span>') '\n'
     cat(' ' $_e '[36m_NL_</span> ') '\n'
     cat($_e '[0m') '</span>'
     '>' '&gt;'
@@ -66,7 +69,7 @@ simrepl: {
     cat('&gt; ' parseCode($ln))
     captured: list()
     {($_asciiToSpan open . fold {.replace}) captured.push} >_builtin.print
-    {captured.push ins.pop dup cat('<em>' . '</em>\n') captured.push} >root.prompt
+    {captured.push ins.empty then nil else {ins.pop dup cat('<em>' . '</em>\n') captured.push}} >root.prompt
     res: list({_eval($ln)} catch {dup .trace.pop pop repl.__pex})
     cat($captured open) .trim dup len = 0 then $pop
     len($res) > 0 then {(

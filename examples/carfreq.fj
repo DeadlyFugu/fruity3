@@ -1,0 +1,29 @@
+import repl.minirepl
+import crayons
+import ds
+
+// startup message
+print('Enter in the colors you saw.')
+
+// helper function for pluralization
+plural: {s => = 1 then $s else {cat($s 's')}}
+
+// get a list of car colors from user
+colors: list()
+minirepl! {colors.push}
+
+// push pairs of (color, freq) to stack ordered by freq
+$colors open ds.tally .entries ds.sortkey! #tail
+
+// convert each pair to string, colorise if needed
+map { p =>
+    cat($p.tail $p.head $p.tail 'car' plural join ' ')
+    hasv($crayons $p.head sym) then {getv($crayons $p.head sym) apply}
+}
+
+// if we have a first one, bold it
+empty else $crayons.bold
+
+// print results
+size print(. dup ' unique color' plural ':' cat)
+reverse map $print
