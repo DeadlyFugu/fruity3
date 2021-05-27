@@ -1,0 +1,19 @@
+// dumping ground for arbitrary stuff
+
+gcs: {_builtin.gccollect _builtin.gcdump}
+
+bench: {
+    (
+        10 repeat! {profile! {clear(1 to 1000000 fold $add)}}
+        fold $add / 10
+    )
+}
+bench10: {10 repeat! $bench}
+err: {repeat! {pop}}
+
+profile: {
+    start: _builtin.clock
+    clear(. apply)
+    end: _builtin.clock
+    $end - $start
+}

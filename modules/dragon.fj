@@ -1,183 +1,162 @@
-import builtin as _builtin
+import builtin as builtin
+// todo: builtin should lock itself?
+builtin.lock! builtin
 
-// This first part just gets the 8 default parents made by the interpreter.
+// get default parents
+1 builtin.getp >>Number
+#a builtin.getp >>Symbol
+'a' builtin.getp >>String
+{} builtin.getp >>Closure
+nil builtin.getp >>Oddball
+builtin.list builtin.getp >>List
+'' builtin.blobenc builtin.getp >>Blob
+@a 1 builtin.getp >>Argument
+{.} catch {} builtin.getp >>Exception
+&x builtin.getp >>Reference
 
-1 _builtin.getp >>Number
-#a _builtin.getp >>Symbol
-'a' _builtin.getp >>String
-{} _builtin.getp >>Closure
-nil _builtin.getp >>Oddball
-_builtin.list _builtin.getp >>List
-'' _builtin.blobenc _builtin.getp >>Blob
-@a 1 _builtin.getp >>Argument
-{.} catch {} _builtin.getp >>Exception
-&x _builtin.getp >>Reference
+dragon: :{}
+this as $dragon // popped later
 
-pop: {x =>}
-dup: {x => $x $x}
-swap: {(. .)}
-clear: {map $pop}
-top: {x => clear $x}
-size: $_builtin.stksize
-empty: {size is 0}
-under: {size - 1 (dot . .)}
-reverse: $_builtin.reverse
+dragon.pop: {x =>}
+dragon.dup: {x => $x $x}
+dragon.swap: {(. .)}
+dragon.clear: {map $pop}
+dragon.top: {x => clear $x}
+dragon.size: $builtin.stksize
+dragon.empty: {size is 0}
+dragon.under: {size - 1 (dot . .)}
+dragon.reverse: $builtin.reverse
 
-// dump: $_builtin.dump
-dump: {list dup >>l open print($l open size >>n map $rep join ' ' cat('(' $n ') [' . ']'))}
-sort: $_builtin.sort
+dragon.pop
 
-add: {o => + $o}
-sub: {o => - $o}
-mul: {o => * $o}
-div: {o => / $o}
-pow: {o => ^ $o}
-mod: {o => % $o}
-divmod: {a b => $a / $b int dup * $b $a swap sub}
+dragon.dump: {list dup >>l open print($l open size >>n map $rep join ' ' cat('(' $n ') [' . ']'))}
+dragon.sort: $builtin.sort
 
-// todo: should .tostr be the casting method instead?
-str: {dup ?._str then {._str} else $_builtin.valstr}
-rep: {dup ?._rep then {._rep} else $str}
+dragon.add: {o => + $o}
+dragon.sub: {o => - $o}
+dragon.mul: {o => * $o}
+dragon.div: {o => / $o}
+dragon.pow: {o => ^ $o}
+dragon.mod: {o => % $o}
+dragon.divmod: {a b => $a / $b int dup * $b $a swap sub}
 
-print: {str '\n' _builtin.strcat(..) _builtin.print}
-printw: {str _builtin.print}
-prompt: $_builtin.prompt
-input: {'' prompt}
+dragon.str: {dup ?._str then {._str} else $builtin.valstr}
+dragon.rep: {dup ?._rep then {._rep} else $str}
 
-parse: {root _builtin.parse}
-eval: {parse apply}
+dragon.print: {str '\n' builtin.strcat(..) builtin.print}
+dragon.printw: {str builtin.print}
+dragon.prompt: $builtin.prompt
+dragon.input: {'' prompt}
 
-match: {f =>
+dragon.parse: {root builtin.parse}
+dragon.eval: {parse apply}
+
+dragon.apply: {f => f}
+dragon.cat: {map $str builtin.strcat}
+dragon.mkstr: $builtin.strmk
+dragon.char: {
+    dup type
+    is #Number then {mkstr(.)}
+    else $builtin.strunmk
+}
+dragon.sym: $builtin.sym
+
+dragon.getv: $builtin.getv
+dragon.setv: $builtin.setv
+dragon.bindv: $builtin.bindv
+dragon.hasv: $builtin.hasv
+dragon.refv: {:{self key =>} as $Reference}
+dragon.lsv: $builtin.lsv
+dragon.hasb: $builtin.hasb
+dragon.lsb: $builtin.lsb
+dragon.getp: $builtin.getp
+dragon.setp: {b => as $b pop}
+dragon.type: $builtin.type
+dragon.lock: $builtin.lock
+
+dragon.bool: {then true else false}
+dragon.not: {then false else true}
+dragon.any: {reverse fold {a b => $b then $b else $a}}
+dragon.all: {reverse fold {a b => $b then $a else $b}}
+
+dragon.int: {._int}
+dragon.float: {._float}
+dragon.abs: {._abs}
+dragon.negate: {0 - ()}
+
+dragon.open: {._open}
+dragon.len: {._len}
+
+dragon.match: {f =>
     ?f.match then {dup f.match}
     else {dup is $f or {$f is default}}
 }
-
-apply: {f => f}
-cat: {map $str _builtin.strcat}
-// todo: below impl fails on empty stack
-join: {s => map $s pop cat}
-mkstr: $_builtin.strmk
-char: {
-    dup type
-    is #Number then {mkstr(.)}
-    else $_builtin.strunmk
-}
-sym: $_builtin.sym
-
-getv: $_builtin.getv
-setv: $_builtin.setv
-bindv: $_builtin.bindv
-hasv: $_builtin.hasv
-refv: {:{self key =>} as $Reference}
-// todo: should lsv return all symbols (including parents)?
-//       have separate lsb hasb for directly bound vars?
-// todo: short form syntax for hasb? `??_foo`? can be used to
-//       distinguish protos from children by means of special _proto attrib?
-//       or is this just overly complex lol?
-lsv: $_builtin.lsv
-hasb: $_builtin.hasb
-lsb: $_builtin.lsb
-getp: $_builtin.getp
-setp: {b => as $b pop}
-type: $_builtin.type
-lock: $_builtin.lock
-
-bool: {then true else false}
-not: {then false else true}
-any: {reverse fold {a b => $b then $b else $a}}
-all: {reverse fold {a b => $b then $a else $b}}
-
-// todo: make a whole bunch of common methods underscore prefixed?
-// so `root int` etc. doesnt call int recursively
-int: {._int}
-float: {._float}
-abs: {._abs}
-negate: {0 - ()}
-
-open: {._open}
-len: {._len}
-
-switch: {
+dragon.switch: {
     reverse >>val
     until {
-        
-        // eval condition
-        // dup type is #Closure
-        // then {.apply($val)}
-        // else {k => $k is $val  or {$k is default }}
         $val swap match swap pop
-        // remove body if false
         dup else {swap pop}
-        
         or $empty
     }
     empty else {top apply}
 }
-chain: {
+dragon.chain: {
     reverse
     until {empty or $apply} do $pop
     empty else {top apply}
 }
-// filter: {f => map {n => f($n) then $n}}
 
-enumerate: {
+dragon.enumerate: {
     n: 0
     map {$n dup + 1 >n swap}
 }
 
-profile: {
-    start: _builtin.clock
-    clear(. apply)
-    end: _builtin.clock
-    $end - $start
-}
-
 Number._float: {self}
-Number._int: {self 16 _builtin.math1}
+Number._int: {self 16 builtin.math1}
 Number._eq: {is self}
 Number._visit: {.number(self)}
 Number._abs: {self < 0 then {self negate} else self}
 
-String._float: {self _builtin.strtof}
-String._int: {self _builtin.strtoi}
-String._open: {self _builtin.stropen}
-String.chars: {self _builtin.strunmk}
+String._float: {self builtin.strtof}
+String._int: {self builtin.strtoi}
+String._open: {self builtin.stropen}
+String.chars: {self builtin.strunmk}
 // todo: some short form for `dup is X then {pop Y}`?
 //       X --> Y? X into Y?
 // also some 'match' global? for use in into, switch
 // into: {match then {pop Y}}
 // X match! Y -> $X Y.match (if ?Y.match)
 //            -> $X is $Y   (otherwise)
-String.get: {i => self $i $i + 1 dup is 0 then {pop nil} _builtin.strsub}
+String.get: {i => self $i $i + 1 dup is 0 then {pop nil} builtin.strsub}
 // todo: better name than sub? (i think i had one down in one of the
 // ideas docs?)
-String.sub: {begin end => self $begin $end _builtin.strsub}
-String.find: {o => self $o _builtin.strstr}
+String.sub: {begin end => self $begin $end builtin.strsub}
+String.find: {o => self $o builtin.strstr}
 String.count: {o => top($o self.split size - 1)}
 String.contains: {o => self.find($o) is nil not}
-String.escape: {self _builtin.stresc}
-String.unescape: {self _builtin.strunesc}
-String.quote: {_builtin.strcat('\'' self '\'')}
-String.split: {delim => self $delim _builtin.strsplit}
+String.escape: {self builtin.stresc}
+String.unescape: {self builtin.strunesc}
+String.quote: {builtin.strcat('\'' self '\'')}
+String.split: {delim => self $delim builtin.strsplit}
 String.splitfirst: {delim =>
     self.find($delim) >>n
     $n then {self.sub(0 $n) self.sub($delim len + $n nil)}
     else {self ''}
 }
 // String.splitws
-String.trim: {self _builtin.strtrim}
+String.trim: {self builtin.strtrim}
 String.replace: {a b => ($a self.split join $b)}
-String.drop: {n => self $n nil _builtin.strsub}
-String.droptail: {n => self 0 $n negate _builtin.strsub}
+String.drop: {n => self $n nil builtin.strsub}
+String.droptail: {n => self 0 $n negate builtin.strsub}
 String.startswith: {s => s._len negate self.droptail is $s}
 String.endswith: {s => s._len negate self.drop is $s}
-String.upper: {self _builtin.strupper}
-String.lower: {self _builtin.strlower}
-String.isupper: {self _builtin.strisup}
-String.islower: {self _builtin.strislo}
-String.blob: {self _builtin.strblob}
-String._len: {self _builtin.strlen}
-String._rep: {self _builtin.valstr}
+String.upper: {self builtin.strupper}
+String.lower: {self builtin.strlower}
+String.isupper: {self builtin.strisup}
+String.islower: {self builtin.strislo}
+String.blob: {self builtin.strblob}
+String._len: {self builtin.strlen}
+String._rep: {self builtin.valstr}
 String._str: {self}
 String._visit: {.string(self)}
 String._eq: {is self}
@@ -193,22 +172,22 @@ Closure._visit: {.closure($self)}
 
 Oddball._visit: {.oddball(self)}
 
-list: $_builtin.list
-List._open: {self _builtin.lstopen}
-List.push: {o => self $o _builtin.lstpush}
-List.pop: {self _builtin.lstpop}
-List.peek: {self -1 _builtin.lstget}
-List.get: {i => self $i _builtin.lstget}
-List.set: {i v => self $i $v _builtin.lstset}
-List._len: {self _builtin.lstsize}
-List.empty: {self _builtin.lstsize is 0}
-List.change: {self _builtin.lstchange}
-List.append: {size >>n (self _builtin.lstopen dot $n self _builtin.lstchange)}
-List.prepend: {self _builtin.lstopen self _builtin.lstchange}
-List.shift: {(self _builtin.lstopen size - 1 (dot . self _builtin.lstchange))}
+dragon.list: $builtin.list
+List._open: {self builtin.lstopen}
+List.push: {o => self $o builtin.lstpush}
+List.pop: {self builtin.lstpop}
+List.peek: {self -1 builtin.lstget}
+List.get: {i => self $i builtin.lstget}
+List.set: {i v => self $i $v builtin.lstset}
+List._len: {self builtin.lstsize}
+List.empty: {self builtin.lstsize is 0}
+List.change: {self builtin.lstchange}
+List.append: {size >>n (self builtin.lstopen dot $n self builtin.lstchange)}
+List.prepend: {self builtin.lstopen self builtin.lstchange}
+List.shift: {(self builtin.lstopen size - 1 (dot . self builtin.lstchange))}
 List.unshift: {self.prepend(.)}
-List.sub: {begin end => list(self $begin $end _builtin.lstsub)}
-List.subopen: {begin end => self $begin $end _builtin.lstsub}
+List.sub: {begin end => list(self $begin $end builtin.lstsub)}
+List.subopen: {begin end => self $begin $end builtin.lstsub}
 List.insert: {i v => self.change(
     self.subopen(0 $i)
     $v
@@ -225,39 +204,25 @@ List.find: {
 List.contains: {v => self.find($v) is nil not}
 List._visit: {.list(self)}
 
-Blob.decode: {self swap _builtin.blobdec}
-Blob.sub: {begin end => self $begin $end _builtin.blobsub}
+Blob.decode: {self swap builtin.blobdec}
+Blob.sub: {begin end => self $begin $end builtin.blobsub}
 Blob.hex: {mkstr(
     hexdigit: {dup >= 10 then {- 10 + char('a')} else {+ char('0')}}
     self open map {16 divmod hexdigit swap hexdigit swap}
 )}
 Blob._visit: {.blob(self)}
-Blob._open: {self _builtin.blobopen}
+Blob._open: {self builtin.blobopen}
 // todo: decode from hex string if provided?
-blob: $_builtin.blobmk
-encode: $_builtin.blobenc
+dragon.blob: $builtin.blobmk
+dragon.encode: $builtin.blobenc
 
-extend: { a b =>
+dragon.extend: { a b =>
     ($b lsv map {s => bindv($a $s $b $s getv)})
 }
 
-this >>root
+$dragon >>dragon.root
 
-gcs: {_builtin.gccollect _builtin.gcdump}
-
-bench: {
-    (
-        10 repeat! {profile! {clear(1 to 1000000 fold $add)}}
-        fold $add / 10
-    )
-}
-bench10: {10 repeat! $bench}
-err: {repeat! {pop}}
-
-// todo: should throw instead take two args?
-// throw(#error 'some message')
-// throw! #error       (if stack top is symbol, generate message automatically)
-throw: { s =>
+dragon.throw: { s =>
     $s type = #Symbol then {
         $s switch( $s
             #unbound 'key unbound'
@@ -265,13 +230,16 @@ throw: { s =>
             #type 'expected different type'
             #invalid 'invalid operation'
             #internal 'internal error'
-            default {$s str} // todo: get s name without #
-        ) _builtin.throw
+            default {s.name}
+        ) builtin.throw
     } else {
-        #error $s _builtin.throw
+        #error $s builtin.throw
     }
 }
-safe: {f => {f true} catch {pop false}}
+dragon.throwx: { key msg =>
+    $key $msg builtin.throw
+}
+dragon.safe: {f => {f true} catch {pop false}}
 
 Reference._str: {
     cat('<reference>')
@@ -289,7 +257,7 @@ Reference.addlocal: {
     self.get + () self.set
 }
 
-argparse: {
+dragon.argparse: {
     a: :{}
     until {empty or {dup getp is $Argument not}}
     do {bindv($a . open)}
@@ -300,14 +268,18 @@ Argument._open: {
 }
 Argument._visit: {.argument(self)}
 
-exit: {0 _builtin.exit}
+dragon.exit: {0 builtin.exit}
 
-sys: :{}
-sys.version: (0 _builtin.sysctl)
+// todo: should sys be a separate module?
+dragon.sys: :{}
+dragon.sys.version: (0 builtin.sysctl)
 
-disasm: $_builtin.disasm
+dragon.disasm: $builtin.disasm
 
+_export: $dragon
 lock! this
+lock! $dragon
+lock! $dragon.sys
 lock! $Number
 lock! $Symbol
 lock! $String

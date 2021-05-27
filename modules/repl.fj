@@ -5,6 +5,8 @@ print_stack: {
     map $crayons.rep empty else {join ' ' print}
 }
 
+// todo: simplify repl module?
+
 // note: trying to print Repl on console causes segfault (stack overflow)
 Repl: :{}
 Repl.print_stack: $print_stack

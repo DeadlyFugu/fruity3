@@ -3,6 +3,7 @@ import files
 import kiwi
 import crayons
 import repl
+import builtin as _builtin
 
 // detect if locking enabled
 // we need it off to stub print/prompt for eval

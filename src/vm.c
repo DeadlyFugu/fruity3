@@ -125,6 +125,10 @@ static bool evalNode(VM* vm, AstNode* node) {
             vm->context = Context_create(vm->context);
             bool result = true;
             if (node->sub) result = evalNode(vm, node->sub);
+            if (vm->context->lock) {
+                raiseInvalid(vm, node, "context locked");
+                return false;
+            }
             vm->context->parent = NULL;
             PUSH(FROM_CONTEXT(vm->context));
             vm->context = oldCtx;
@@ -928,6 +932,10 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
             }
             if (GET_TYPE(lhs) != TYPE_CONTEXT) {
                 raiseType(vm, node, TYPE_CONTEXT);
+                return false;
+            }
+            if (GET_CONTEXT(lhs)->lock) {
+                raiseInvalid(vm, node, "context locked");
                 return false;
             }
             GET_CONTEXT(lhs)->parent = subIsNil ? NULL : GET_CONTEXT(sub);
