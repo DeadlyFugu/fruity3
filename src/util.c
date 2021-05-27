@@ -367,6 +367,7 @@ Context* fpContextCreate(Context* parent) {
 }
 
 void fpContextBind(Context* context, Symbol key, Value value) {
+    assert(!context->lock);
     Context_bind(context, key, value);
 }
 

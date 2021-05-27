@@ -165,8 +165,12 @@ static bool evalNode(VM* vm, AstNode* node) {
                 return false;
             }
             Value v = Stack_pop(vm->stack);
-            if (!Context_set(base, chainElem->symbol, v)) {
+            SetResult sr = Context_set(base, chainElem->symbol, v);
+            if (sr == SET_UNBOUND) {
                 raiseUnbound(vm, node, chainElem->symbol);
+                return false;
+            } else if (sr == SET_LOCKED) {
+                raiseInvalid(vm, node, "context locked");
                 return false;
             }
         } break;
@@ -176,6 +180,9 @@ static bool evalNode(VM* vm, AstNode* node) {
             if (!chainResolve(vm, node, &base, &chainElem, NULL)) return false;
             if (vm->stack->next == 0) {
                 raiseUnderflow(vm, node, 1);
+                return false;
+            } else if (base->lock) {
+                raiseInvalid(vm, node, "context locked");
                 return false;
             }
             Value v = Stack_pop(vm->stack);
@@ -205,6 +212,10 @@ static bool evalNode(VM* vm, AstNode* node) {
             Context* base = vm->context;
             AstChainElem* chainElem = node->as_chain;
             if (!chainResolve(vm, node, &base, &chainElem, NULL)) return false;
+            if (base->lock) {
+                raiseInvalid(vm, node, "context locked");
+                return false;
+            }
             // todo: evalAndPop?
             if (!evalNode(vm, node->sub)) {
                 return false;
@@ -359,9 +370,15 @@ static bool evalNode(VM* vm, AstNode* node) {
         } break;
         case AST_IMPORT: {
             AstChainElem* chain = node->as_chain;
-            if (chain->symbol == (Symbol) -1) assert(0 && "not impl");
-            if (!Module_import(vm, Symbol_name(chain->symbol), false)) {
-                return false;
+            if (chain->symbol == (Symbol) -1) {
+                chain = chain->next;
+                if (!Module_importRel(vm, Symbol_name(chain->symbol), node->module)) {
+                    return false;
+                }
+            } else {
+                if (!Module_import(vm, Symbol_name(chain->symbol), false)) {
+                    return false;
+                }
             }
             // todo: Module_import should probably just return Value
             Value v = Stack_pop(vm->stack);
@@ -373,6 +390,10 @@ static bool evalNode(VM* vm, AstNode* node) {
                 }
                 v = *pv;
                 chain = chain->next;
+            }
+            if (vm->context->lock) {
+                raiseInvalid(vm, node, "context locked");
+                return false;
             }
             if (node->sub) {
                 Context_bind(vm->context, node->sub->as_chain->symbol, v);
@@ -386,6 +407,10 @@ static bool evalNode(VM* vm, AstNode* node) {
         case AST_SIGBIND: {
             if (vm->stack->next == 0) {
                 raiseUnderflow(vm, node, 1);
+                return false;
+            }
+            if (vm->context->lock) { // could happen with evalin
+                raiseInvalid(vm, node, "context locked");
                 return false;
             }
             Value v = Stack_pop(vm->stack);

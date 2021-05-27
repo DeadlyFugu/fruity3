@@ -24,7 +24,7 @@ struct sVM {
     ExceptionTrace* exTraceFirst;
     ExceptionTrace* exTraceLast;
     bool exSourceHasTrace;
-    bool fullTrace;
+    bool fullTrace, noLock;
     Context* root;
     Context* context;
     Symbol symSelf, symThis, symOps[21], symExs[5];

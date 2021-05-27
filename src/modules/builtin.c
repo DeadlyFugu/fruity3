@@ -75,8 +75,12 @@ bool builtin_setv(VM* vm) {
     Value v;
     // todo: string-or-symbol char in extract?
     if (!fpExtract(vm, "cyv", &c, &s, &v)) return false;
-    if (!Context_set(c, s, v)) {
+    SetResult sr = Context_set(c, s, v);
+    if (sr == SET_UNBOUND) {
         fpRaiseUnbound(vm, s);
+        return false;
+    } else if (sr == SET_LOCKED) {
+        fpRaiseInvalid(vm, "context locked");
         return false;
     }
     return true;
@@ -88,6 +92,10 @@ bool builtin_bindv(VM* vm) {
     Value v;
     // todo: string-or-symbol char in extract?
     if (!fpExtract(vm, "cyv", &c, &s, &v)) return false;
+    if (c->lock) {
+        fpRaiseInvalid(vm, "context locked");
+        return false;
+    }
     Context_bind(c, s, v);
     return true;
 }
@@ -1357,6 +1365,13 @@ bool builtin_disasm(VM* vm) {
     return true;
 }
 
+bool builtin_lock(VM* vm) {
+    Context* c;
+    if (!fpExtract(vm, "c", &c)) return false;
+    if (!vm->noLock) c->lock = true;
+    return true;
+}
+
 bool builtin_test(VM* vm) {
     int n;
     int* ns;
@@ -1449,6 +1464,7 @@ bool register_module(VM* vm, ModuleInfo* module) {
     REGISTER(dir);
     REGISTER(mkdir);
     REGISTER(disasm);
+    REGISTER(lock);
     REGISTER(test);
     return true;
 }

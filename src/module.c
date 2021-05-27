@@ -24,14 +24,18 @@ void Module_addPath(const char* path) {
     modPaths[nextModPath++] = path;
 }
 
+static bool importCommon(VM* vm, const char* name,
+    bool main, bool native, char* path);
+
 bool Module_import(VM* vm, const char* name, bool main) {
-    for (int i = 0; i < vm->moduleCount; i++) {
-        if (strcmp(vm->modules[i]->name, name) == 0) {
-            // todo: have some 'loading' flag to detect circular imports?
-            Stack_push(vm->stack, vm->modules[i]->value);
-            return true;
-        }
-    }
+    // todo: search cache for only non-rel modules to skip stat
+    // for (int i = 0; i < vm->moduleCount; i++) {
+    //     if (strcmp(vm->modules[i]->name, name) == 0) {
+    //         // todo: have some 'loading' flag to detect circular imports?
+    //         Stack_push(vm->stack, vm->modules[i]->value);
+    //         return true;
+    //     }
+    // }
 
     bool found = false;
     bool native = false;
@@ -56,6 +60,49 @@ bool Module_import(VM* vm, const char* name, bool main) {
         return false;
     }
 
+    return importCommon(vm, name, main, native, path);
+}
+
+bool Module_importRel(VM* vm, const char* name, ModuleInfo* from) {
+    if (!from->filename) {
+        raiseInternal(vm, "module not found");
+        return false;
+    }
+    const char* base = from->filename;
+    const char* end_slash = strrchr(base, '/');
+    int base_len = end_slash ? end_slash - base : strlen(base);
+    char path[1024];
+    snprintf(path, 1024, "%.*s/%s.fj", base_len, base, name);
+    struct stat s;
+    bool found, native;
+    if (stat(path, &s) == 0) {
+        found = true;
+    } else {
+        snprintf(path, 1024, "%.*s/mod%s.so", base_len, base, name);
+        if (stat(path, &s) == 0) {
+            found = true;
+            native = true;
+        }
+    }
+    if (!found) {
+        raiseInternal(vm, "module not found");
+        return false;
+    }
+    return importCommon(vm, name, false, native, path);
+}
+
+#include <limits.h>
+static bool importCommon(VM* vm, const char* name, bool main, bool native, char* path) {
+    char rp[PATH_MAX];
+    realpath(path, rp);
+    for (int i = 0; i < vm->moduleCount; i++) {
+        if (strcmp(vm->modules[i]->_realpath, rp) == 0) {
+            // todo: have some 'loading' flag to detect circular imports?
+            Stack_push(vm->stack, vm->modules[i]->value);
+            return true;
+        }
+    }
+
     if (vm->modules == NULL) {
         vm->moduleCount = 1;
         vm->modules = GC_MALLOC(sizeof(ModuleInfo*));
@@ -66,9 +113,10 @@ bool Module_import(VM* vm, const char* name, bool main) {
     }
     ModuleInfo* info = GC_MALLOC(sizeof(ModuleInfo));
     vm->modules[vm->moduleCount - 1] = info;
-    info->name = name;
+    info->name_ = name;
     info->main = main;
     info->native = native;
+    info->_realpath = GC_strdup(rp);
     // todo: allow modules to declare themselves as hidden
     if (strcmp(name, "dragon") == 0) info->hideTrace = true;
     // char* filename = strrchr(path, '/'); // todo: need to add 1
@@ -86,11 +134,16 @@ bool Module_import(VM* vm, const char* name, bool main) {
 }
 
 bool Module_fromFile(VM* vm, const char* path, bool main) {
+    // todo: this should probably use importCommon too so file is cached
     ModuleInfo* info = GC_MALLOC(sizeof(ModuleInfo));
-    info->name = "<file>";
+    *info = (ModuleInfo) {};
+    info->name_ = "<file>";
     info->main = main;
     info->native = false;
     info->filename = GC_strdup(path);
+    char rp[PATH_MAX];
+    realpath(path, rp);
+    info->_realpath = GC_strdup(rp);
     return loadFruityModule(vm, info, path);
 }
 
@@ -123,7 +176,7 @@ static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path) {
     Context* ctx = Context_create(vm->root);
     info->value = FROM_CONTEXT(ctx);
     // todo: maybe dont bind _module for dragon
-    Context_bind(ctx, Symbol_find("_module", 7), FROM_STRING(info->name));
+    // Context_bind(ctx, Symbol_find("_module", 7), FROM_STRING(info->name));
     if (info->main) Context_bind(ctx, Symbol_find("_main", 5), VAL_TRUE);
     if (!VM_evalModule(vm, block, ctx)) return false;
     Value* exports = Context_get(ctx, Symbol_find("_export", 7));
@@ -161,6 +214,6 @@ void Module_dump(VM* vm) {
     printf("Modules (%d loaded)\n", vm->moduleCount);
     for (int i = 0; i < vm->moduleCount; i++) {
         ModuleInfo* mi = vm->modules[i];
-        printf("  %s = %s\n", mi->name, Value_repr(mi->value, 1));
+        printf("  %s = %s\n", mi->_realpath, Value_repr(mi->value, 1));
     }
 }

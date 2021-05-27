@@ -1,5 +1,6 @@
 #include "context.h"
 #include "symbols.h"
+#include <assert.h>
 
 #define START_CAP 8
 #define HASH(k) ((k) ^ 0xF93A)
@@ -23,20 +24,22 @@ Value* Context_get(Context* ctx, Symbol key) {
     return ctx->parent ? Context_get(ctx->parent, key) : NULL;
 }
 
-bool Context_set(Context* ctx, Symbol key, Value value) {
+SetResult Context_set(Context* ctx, Symbol key, Value value) {
     int index = HASH(key) & (ctx->capacity - 1); // key % capacity
     // note: infinite loop if count == capacity!
     while (ctx->keys[index]) {
         if (ctx->keys[index] == key) {
+            if (ctx->lock) return SET_LOCKED;
             ctx->values[index] = value;
-            return true;
+            return SET_OK;
         }
         index = (index + 1) & (ctx->capacity - 1);
     }
-    return ctx->parent ? Context_set(ctx->parent, key, value) : false;
+    return ctx->parent ? Context_set(ctx->parent, key, value) : SET_UNBOUND;
 }
 
 void Context_bind(Context* ctx, Symbol key, Value value) {
+    assert(!ctx->lock);
     // set key if already present
     int index = HASH(key) & (ctx->capacity - 1); // key % capacity
     // note: infinite loop if count == capacity!

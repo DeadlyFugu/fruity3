@@ -4,6 +4,12 @@ import kiwi
 import crayons
 import repl
 
+// detect if locking enabled
+// we need it off to stub print/prompt for eval
+// proper way to redirect io would be nice
+{$root.print >root.print} catch {
+  pop print(crayons.red! crayons.bold! 'error: please run with -l') exit
+}
 store: (:{
   items: list()
   pushBite: { name body =>
@@ -22,8 +28,6 @@ store: (:{
   index: 'undefined'
 } as this)
 
-// Use native syntax highlighter
-// parseCode: $native.syntaxHighlighter
 _asciiToSpan: list(
     _e: char(27)
     _s: {cat('<span class="' . '">')}

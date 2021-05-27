@@ -20,9 +20,10 @@ int main(int argc, char** argv) {
     bool useFallback = false;
     bool isFreestanding = false;
     bool fullTrace = false;
+    bool noLocking = false;
 
     int option;
-    while ((option = getopt(argc, argv, "e:m:M:fFht")) != -1) {
+    while ((option = getopt(argc, argv, "e:m:M:fFhtl")) != -1) {
         switch (option) {
             // e -- Evaluate
             case 'e': {
@@ -57,6 +58,9 @@ int main(int argc, char** argv) {
             case 't': {
                 fullTrace = true;
             } break;
+            case 'l': {
+                noLocking = true;
+            } break;
             // x -- skip first line of source, allowing hashbangs
             // case 'x': {
             //     // todo: implement
@@ -72,6 +76,7 @@ int main(int argc, char** argv) {
                 printf("    -f         use fallback repl\n");
                 printf("    -F         Freestanding (dont import dragon)\n");
                 printf("    -t         don't hide internal Traces\n");
+                printf("    -l         disable context Locking\n");
                 // printf("    -x\n");
                 printf("    -h         show this help message\n");
                 exit(0);
@@ -112,7 +117,7 @@ int main(int argc, char** argv) {
     rl_bind_key('\t', rl_insert);
     
     GC_INIT();
-    VM vm = { .fullTrace = fullTrace };
+    VM vm = { .fullTrace = fullTrace, .noLock = noLocking };
     VM_startup(&vm);
 
     if (!isFreestanding) {

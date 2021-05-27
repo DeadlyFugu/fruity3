@@ -80,6 +80,7 @@ lsb: $_builtin.lsb
 getp: $_builtin.getp
 setp: {b => as $b pop}
 type: $_builtin.type
+lock: $_builtin.lock
 
 bool: {then true else false}
 not: {then false else true}
@@ -305,3 +306,15 @@ sys: :{}
 sys.version: (0 _builtin.sysctl)
 
 disasm: $_builtin.disasm
+
+lock! this
+lock! $Number
+lock! $Symbol
+lock! $String
+lock! $Closure
+lock! $Oddball
+lock! $List
+lock! $Blob
+lock! $Argument
+lock! $Exception
+lock! $Reference
