@@ -292,11 +292,11 @@ bool fpIsIdentChar(char c) {
         c == '_';
 }
 
-static const int ntDigit[10] = { 2, 2, 2, 2, 5, 5, 5, 8, 8, 8 };
-static const int ntSign[10] =  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-static const int ntComma[10] = { 0, 0, 3, 0, 0, 6, 0, 0, 9, 0 };
-static const int ntDot[10]   = { 4, 4, 4, 0, 0, 0, 0, 0, 0, 0 };
-static const int ntExp[10]   = { 0, 0, 7, 0, 0, 7, 0, 0, 0, 0 };
+static const int ntDigit[11] = { 2, 2, 2, 2, 5, 5, 5, 8, 8, 8, 8 };
+static const int ntSign[11] =  { 1, 0, 0, 0, 0, 0, 0,10, 0, 0, 0 };
+static const int ntComma[11] = { 0, 0, 3, 0, 0, 6, 0, 0, 9, 0, 0 };
+static const int ntDot[11]   = { 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0 };
+static const int ntExp[11]   = { 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 0 };
 bool fpIsValidNumber(const char* str, int length) {
     int state = 0;
     for (int i = 0; i < length; i++) {

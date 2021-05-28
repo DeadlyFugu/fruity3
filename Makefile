@@ -16,7 +16,7 @@ DEPS := $(wildcard $(OBJ_DIR)/*.d)
 
 .PHONY: clean all
 
-all: fp modules/modbuiltin.so modules/modpcre2.so
+all: fp modules/modpcre2.so
 
 fp: $(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
@@ -24,8 +24,8 @@ fp: $(OBJECTS)
 $(OBJECTS): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $(OUTPUT_OPTION) $<
 
-modules/modbuiltin.so: src/modules/builtin.c
-	$(CC) $(CFLAGS) -shared -o modules/modbuiltin.so -fPIC src/modules/builtin.c
+# modules/modbuiltin.so: src/modules/builtin.c
+# 	$(CC) $(CFLAGS) -shared -o modules/modbuiltin.so -fPIC src/modules/builtin.c
 
 modules/modpcre2.so: src/modules/modpcre2.c
 	$(CC) $(CFLAGS) -shared -o modules/modpcre2.so -fPIC src/modules/modpcre2.c -lpcre2-8

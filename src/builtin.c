@@ -1,6 +1,6 @@
-#include "../common.h"
-#include "../vm.h"
-#include "../fruity.h"
+#include "common.h"
+#include "vm.h"
+#include "fruity.h"
 
 #include <errno.h>
 #include <gc/gc.h>
@@ -572,10 +572,19 @@ bool builtin_lstopen(VM* vm) {
 }
 
 bool builtin_lstpush(VM* vm) {
-    Stack* list;
-    Value v;
-    if (!fpExtract(vm, "lv", &list, &v)) return false;
-    Stack_push(list, v);
+    // this function is called often so we avoid fpExtract
+    if (vm->stack->next < 2) {
+        fpRaiseUnderflow(vm, 2);
+        return false;
+    }
+    Value v1 = vm->stack->values[vm->stack->next-2];
+    Value v2 = vm->stack->values[vm->stack->next-1];
+    if (GET_TYPE(v1) != TYPE_LIST) {
+        fpRaiseType(vm, TYPE_LIST);
+        return false;
+    }
+    Stack_push(GET_LIST(v1), v2);
+    vm->stack->next -= 2;
     return true;
 }
 
@@ -1397,7 +1406,7 @@ bool builtin_test(VM* vm) {
     fpContextBind(ctx, fpIntern(#name), \
         fpFromFunction(module, "builtin_" #name, builtin_##name))
 
-bool register_module(VM* vm, ModuleInfo* module) {
+bool register_builtin(VM* vm, ModuleInfo* module) {
     Context* ctx = Context_create(NULL);
     module->value = FROM_CONTEXT(ctx);
     REGISTER(stksize);

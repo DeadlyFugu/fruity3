@@ -1,0 +1,119 @@
+// based on https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-python3-1.html
+
+import ds
+import math
+
+combinations: { l =>
+    0 to (len($l) - 2) map { x =>
+        ls: l.sub($x + 1 nil)
+        ($ls open map {y => list(l.get($x) $y)})
+    }
+}
+
+PI: 3.14159265358979323
+SOLAR_MASS: (4 * $PI * $PI)
+DAYS_PER_YEAR: 365.24
+
+vec3: {:{x y z =>}}
+BODIES: ds.dict(
+    #sun :{pos: vec3(0.0 0.0 0.0) vel: vec3(0.0 0.0 0.0) mass: SOLAR_MASS}
+    #jupiter :{pos: vec3(4.84143144246472090e+00
+                 -1.16032004402742839e+00
+                 -1.03622044471123109e-01)
+                vel: vec3(1.66007664274403694e-03 * DAYS_PER_YEAR
+                 7.69901118419740425e-03 * DAYS_PER_YEAR
+                 -6.90460016972063023e-05 * DAYS_PER_YEAR)
+                mass: (9.54791938424326609e-04 * SOLAR_MASS)}
+
+    #saturn :{pos: vec3(8.34336671824457987e+00
+                4.12479856412430479e+00
+                -4.03523417114321381e-01)
+               vel: vec3(-2.76742510726862411e-03 * DAYS_PER_YEAR
+                4.99852801234917238e-03 * DAYS_PER_YEAR
+                2.30417297573763929e-05 * DAYS_PER_YEAR)
+               mass: (2.85885980666130812e-04 * SOLAR_MASS)}
+
+    #uranus :{pos: vec3(1.28943695621391310e+01
+                -1.51111514016986312e+01
+                -2.23307578892655734e-01)
+               vel: vec3(2.96460137564761618e-03 * DAYS_PER_YEAR
+                2.37847173959480950e-03 * DAYS_PER_YEAR
+                -2.96589568540237556e-05 * DAYS_PER_YEAR)
+               mass: (4.36624404335156298e-05 * SOLAR_MASS)}
+
+    #neptune :{pos: vec3(1.53796971148509165e+01
+                 -2.59193146099879641e+01
+                 1.79258772950371181e-01)
+                vel: vec3(2.68067772490389322e-03 * DAYS_PER_YEAR
+                 1.62824170038242295e-03 * DAYS_PER_YEAR
+                 -9.51592254519715870e-05 * DAYS_PER_YEAR)
+                mass: (5.15138902046611451e-05 * SOLAR_MASS)}
+)
+
+SYSTEM: list(BODIES.values)
+PAIRS: list(combinations($SYSTEM))
+
+advance: { dt n =>
+    $n repeat {
+        $PAIRS open map { p1: p2: open
+            $p1.pos.x - $p2.pos.x >>dx
+            $p1.pos.y - $p2.pos.y >>dy
+            $p1.pos.z - $p2.pos.z >>dz
+            $dt * ($dx * $dx $dy * $dy $dz * $dz add add ^ -1.5)
+            dup * $p1.mass >>b1m
+            * $p2.mass >>b2m
+            $p1.vel.x $dx * $b2m sub >p1.vel.x
+            $p1.vel.y $dy * $b2m sub >p1.vel.y
+            $p1.vel.z $dz * $b2m sub >p1.vel.z
+            $p2.vel.x $dx * $b1m add >p2.vel.x
+            $p2.vel.y $dy * $b1m add >p2.vel.y
+            $p2.vel.z $dz * $b1m add >p2.vel.z
+        }
+        $SYSTEM open map { p =>
+            $dt * $p.vel.x + $p.pos.x >p.pos.x
+            $dt * $p.vel.y + $p.pos.y >p.pos.y
+            $dt * $p.vel.z + $p.pos.z >p.pos.z
+        }
+    }
+}
+
+report_energy: {
+    e: 0
+    $PAIRS open map { p1: p2: open
+        $p1.pos.x - $p2.pos.x >>dx
+        $p1.pos.y - $p2.pos.y >>dy
+        $p1.pos.z - $p2.pos.z >>dz
+        $e $p1.mass * $p2.mass / math.sqrt(
+            $dx * $dx $dy * $dy $dz * $dz add add
+        ) sub >e
+    }
+    $SYSTEM open map { p =>
+        $p.mass * ($p.vel.x dup mul
+            $p.vel.y dup mul
+            $p.vel.z dup mul add add)
+        / 2 + $e >e
+    }
+    print($e)
+}
+
+offset_momentum: { ref =>
+    px: 0 py: 0 pz: 0
+    $SYSTEM open map { p =>
+        $px $p.vel.x * $p.mass sub >px
+        $py $p.vel.y * $p.mass sub >py
+        $pz $p.vel.z * $p.mass sub >pz
+    }
+    $px / $ref.mass >ref.vel.x
+    $py / $ref.mass >ref.vel.y
+    $pz / $ref.mass >ref.vel.z
+}
+
+main: { n =>
+    offset_momentum(BODIES.get(#sun))
+    report_energy()
+    advance(0.01 $n)
+    report_energy()
+}
+?_main then {
+    sys.args.get(0) int main
+}

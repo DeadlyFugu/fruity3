@@ -27,6 +27,7 @@ void Module_addPath(const char* path) {
 
 static bool importCommon(VM* vm, const char* name,
     bool main, bool native, char* path);
+extern bool register_builtin(VM* vm, ModuleInfo* module);
 
 bool Module_import(VM* vm, const char* name, bool main) {
     // todo: search cache for only non-rel modules to skip stat
@@ -41,7 +42,12 @@ bool Module_import(VM* vm, const char* name, bool main) {
     bool found = false;
     bool native = false;
     char path[1024];
-    for (int i = 0; i < nextModPath; i++) {
+    if (strcmp(name, "builtin") == 0) {
+        found = true;
+        native = true;
+        snprintf(path, 1024, "/__BUILTIN__");
+    }
+    for (int i = 0; i < nextModPath && !found; i++) {
         snprintf(path, 1024, "%s/%s.fj", modPaths[i], name);
         struct stat s;
         if (stat(path, &s) == 0) {
@@ -194,15 +200,20 @@ static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path) {
 }
 
 static bool loadNativeModule(VM* vm, ModuleInfo* info, const char* path) {
-    void* dl = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
-    if (!dl) {
-        raiseInternal(vm, "unable to open file");
-        return false;
-    }
-    bool(*fn)(VM*, ModuleInfo*) = dlsym(dl, "register_module");
-    if (!fn) {
-        raiseInternal(vm, "cannot find register function");
-        return false;
+    bool(*fn)(VM*, ModuleInfo*);
+    if (strcmp(path, "/__BUILTIN__") == 0) {
+        fn = register_builtin;
+    } else {
+        void* dl = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
+        if (!dl) {
+            raiseInternal(vm, "unable to open file");
+            return false;
+        }
+        fn = dlsym(dl, "register_module");
+        if (!fn) {
+            raiseInternal(vm, "cannot find register function");
+            return false;
+        }
     }
     info->value = VAL_NIL;
     if (!fn(vm, info)) {
