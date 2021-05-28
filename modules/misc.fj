@@ -1,4 +1,6 @@
 // dumping ground for arbitrary stuff
+import assert
+import math
 
 gcs: {_builtin.gccollect _builtin.gcdump}
 
@@ -16,4 +18,45 @@ profile: {
     clear(. apply)
     end: _builtin.clock
     $end - $start
+}
+
+gcd: { a b =>
+    assert.isint($a)
+    assert.isint($b)
+    until {$b = 0} do {
+        $b $a % $b >b >a
+    }
+    $a abs
+}
+isprime: {n =>
+    assert.isint($n)
+    chain(
+        {$n <= 3} {$n >= 2}
+        {$n % 2 = 0} false
+        {$n % 3 = 0} false
+        default {
+            limit: int($n math.sqrt)
+            i: 5
+            until {
+                chain(
+                    {$i > $limit} {true true}
+                    {$n % $i = 0} {false true}
+                    {$n % ($i + 2) = 0} {false true}
+                    default {$i + 6 >i false}
+                )
+            }
+        }
+    )
+}
+factors: { n =>
+    assert.isint($n)
+    assert.precondition($n > 0)
+    p: 2
+    until {$n = 1} do {
+        $n % $p = 0 then {
+            $p $n / $p >n
+        } else {
+            $p + 1 until {dup isprime} do {+ 1} >p
+        }
+    }
 }

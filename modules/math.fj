@@ -71,8 +71,6 @@ math.rand_range: {begin end => builtin.rand % ($end - $begin + 1) + $begin}
 math.isnan: {19 builtin.math1 = 0}
 math.isinf: {19 builtin.math1 = 1}
 
-// todo: isprime? prime factors/gcd?
-
 // -- Complex Type -- //
 // todo: this should probably be in a separate source file eventually
 Complex: :{}
@@ -96,3 +94,4 @@ Complex._open: {$self.r $self.i}
 Complex._visit: {.openable('math.complex' self)}
 
 _export: $math
+_hidden: true

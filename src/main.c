@@ -14,6 +14,9 @@ static const char* runKindLabels[] = {
 
 static void runFallbackRepl(VM* vm);
 
+char** fpArgv;
+int fpArgc;
+
 int main(int argc, char** argv) {
     const char* run = NULL;
     int runKind = 0; // 0 - fallback repl, 1 - file, 2 - module, 3 - eval, 4 repl
@@ -61,12 +64,6 @@ int main(int argc, char** argv) {
             case 'l': {
                 noLocking = true;
             } break;
-            // x -- skip first line of source, allowing hashbangs
-            // case 'x': {
-            //     // todo: implement
-            //     printf("error: -x not implemented\n");
-            //     exit(1);
-            // } break;
             // h -- show help
             case 'h': {
                 printf("usage: %s [options] [file] [--] [args...]\n", argv[0]);
@@ -77,7 +74,6 @@ int main(int argc, char** argv) {
                 printf("    -F         Freestanding (dont import dragon)\n");
                 printf("    -t         don't hide internal Traces\n");
                 printf("    -l         disable context Locking\n");
-                // printf("    -x\n");
                 printf("    -h         show this help message\n");
                 exit(0);
             } break;
@@ -90,7 +86,7 @@ int main(int argc, char** argv) {
         }
     }
     if (optind < argc && runKind == 0) {
-        run = GC_strdup(argv[optind]);
+        run = GC_strdup(argv[optind++]);
         runKind = 1;
     }
 
@@ -112,13 +108,18 @@ int main(int argc, char** argv) {
     //     case 3: printf("EVAL %s\n", run); break;
     // }
 
-    // todo: pass remaining args into program
-
     rl_bind_key('\t', rl_insert);
     
     GC_INIT();
     VM vm = { .fullTrace = fullTrace, .noLock = noLocking };
     VM_startup(&vm);
+
+    for (int i = optind + 1; i < argc; i++) {
+        Stack_push(vm.stack, FROM_STRING(argv[i]));
+    }
+
+    fpArgv = &argv[optind];
+    fpArgc = argc - optind;
 
     if (!isFreestanding) {
         if (!Module_import(&vm, "dragon", false)) {
@@ -133,9 +134,6 @@ int main(int argc, char** argv) {
             runFallbackRepl(&vm);
         } break;
         case 1: {
-            // todo: do we add containing folder as module?
-            // (probably not, module importing should instead be
-            //  relative to module specifying import?)
             if (!Module_fromFile(&vm, run, true)) {
                 dumpError(&vm);
                 return 1;

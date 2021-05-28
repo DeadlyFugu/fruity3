@@ -22,10 +22,6 @@ ds.Grid: :{width: 0 height: 0 values: list()}
 ds.Grid.new: {
     :{width height => values: list($width * $height repeat nil)}
     as $ds.Grid
-    // todo: maybe 'new' special op would be better?
-    // e.g. g: new $ds.Grid g.width: 32 g.height: 64 ...
-    // then could maybe remove as and make parent immutable?
-    // maybe nah
 }
 ds.Grid.get: {x y =>
     $y * $self.width + $x self.values.get
@@ -100,8 +96,8 @@ ds.sortby: { f =>
 
 ds.sortkey: { k =>
     switch($k type
-        #Symbol {{a b => getv($a $k) <> getv($b $k)}}
-        #Closure {{a b => k($a) <> k($b)}}
+        #symbol {{a b => getv($a $k) <> getv($b $k)}}
+        #closure {{a b => k($a) <> k($b)}}
         default {throw! 'expected symbol or closure'}
     )
     ds.sortby

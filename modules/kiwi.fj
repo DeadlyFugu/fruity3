@@ -56,7 +56,7 @@ kiwi.parse_string: { in context =>
       $context parse_tag output.append(. .chars)
     } else {
       // Otherwise append the character
-      $ch type != #Number
+      $ch type != #number
       then {output.append(ch.chars)}
       else {$ch output.push}
     }
@@ -100,7 +100,7 @@ parse_tag: { context =>
     // Resolve head
     getv($context $head sym) dup
     // Is it a function?
-    type = #Closure
+    type = #closure
       // Then apply the function
       then {cat(. .apply($body))}
       // Otherwise turn it into a string

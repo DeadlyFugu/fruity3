@@ -11,10 +11,14 @@ typedef enum {
     RESOLVE_SELF // resolved, with self
 } ResolveStatus;
 
+static const char* typeNames[] = {
+    "number", "symbol", "string", "oddball",
+    "context", "closure", "list", "blob"
+};
+
 // todo: expose via header
 extern const char* gc_sprintf(const char* fmt, ...);
 
-// todo: this should be in vm
 extern Stack* genTraceList(VM* vm);
 
 static bool evalNode(VM* vm, AstNode* node);
@@ -63,10 +67,18 @@ void VM_startup(VM* vm) {
     for (int i = 0; i < 5; i++) {
         vm->symExs[i] = Symbol_find(exNames[i], strlen(exNames[i]));
     }
+    for (int i = 0; i < 8; i++) {
+        vm->symTypes[i] = Symbol_find(typeNames[i], strlen(typeNames[i]));
+    }
     vm->symKey = Symbol_find("key", 3);
     vm->symValue = Symbol_find("value", 5);
     vm->symMessage = Symbol_find("message", 7);
     vm->symTrace = Symbol_find("trace", 5);
+    vm->symUApply = Symbol_find("_apply", 6);
+    vm->symUCmp = Symbol_find("_cmp", 4);
+    vm->symUEq = Symbol_find("_eq", 3);
+    vm->symUJoin = Symbol_find("_join", 5);
+    vm->symUWith = Symbol_find("_with", 5);
     vm->modules = NULL;
     vm->moduleCount = 0;
     for (int i = 0; i < 8; i++) {
@@ -88,13 +100,13 @@ bool VM_eval(VM* vm, Block* block) {
 bool VM_evalModule(VM* vm, Block* block, Context* ctx) {
     Stack* oldStack = vm->stack;
     Context* oldCtx = vm->context;
-    vm->stack = GC_MALLOC(sizeof(Stack));
-    *vm->stack = (Stack) {};
+    vm->stack = Stack_acquire(NULL);
     vm->context = ctx;
     if (block->first) {
         if (!evalNode(vm, block->first)) return false;
     }
     vm->context = oldCtx;
+    Stack_release(vm->stack);
     vm->stack = oldStack;
     return true;
 }
@@ -239,8 +251,7 @@ static bool evalNode(VM* vm, AstNode* node) {
                 return false;
             }
             Stack* oldStk = vm->stack;
-            vm->stack = GC_MALLOC(sizeof(Stack));
-            *vm->stack = (Stack) { .previous = oldStk };
+            vm->stack = Stack_acquire(oldStk);
             if (node->sub && !evalNode(vm, node->sub)) {
                 Stack_move(vm->stack, oldStk, vm->stack->next);
                 vm->stack = oldStk;
@@ -248,8 +259,7 @@ static bool evalNode(VM* vm, AstNode* node) {
             }
             bool result = evalCall(vm, node, *pv, rs == RESOLVE_SELF ? &self : NULL);
             Stack_move(vm->stack, oldStk, vm->stack->next);
-            GC_FREE(vm->stack->values);
-            GC_FREE(vm->stack);
+            Stack_release(vm->stack);
             vm->stack = oldStk;
             if (!result) return false;
         } break;
@@ -297,12 +307,10 @@ static bool evalNode(VM* vm, AstNode* node) {
         case AST_GROUP: {
             if (!node->sub) break;
             Stack* old = vm->stack;
-            vm->stack = GC_MALLOC(sizeof(Stack));
-            *vm->stack = (Stack) { .previous = old };
+            vm->stack = Stack_acquire(old);
             bool result = evalNode(vm, node->sub);
             if (result) Stack_move(vm->stack, old, vm->stack->next);
-            GC_FREE(vm->stack->values);
-            GC_FREE(vm->stack);
+            Stack_release(vm->stack);
             vm->stack = old;
             if (!result) return false;
         } break;
@@ -487,12 +495,6 @@ bool evalCall(VM* vm, AstNode* caller, Value v, Value* self) {
         }
         Context* oldCtx = vm->context;
         vm->context = Context_create(closure->binding);
-        // todo: somehow block dotting through calls?
-        //       temporarily set stack->previous to null?
-        //       note that we don't always want to block on call
-        //       (e.g. object syntax, loops)
-        //       maybe don't block?
-        // note: 1.0 does not block
         if (self) {
             Context_bind(vm->context, vm->symSelf, *self);
         }
@@ -504,8 +506,10 @@ bool evalCall(VM* vm, AstNode* caller, Value v, Value* self) {
             return false;
         }
     } else {
-        // todo: lookup _apply?
-        PUSH(v);
+        Value* pv = Context_get(getContext(vm, v), vm->symUApply);
+        if (pv) {
+            return evalCall(vm, caller, *pv, &v);
+        } else PUSH(v);
     }
     return true;
 }
@@ -532,18 +536,15 @@ bool valueCompare(VM* vm, AstNode* node, Value lhs, Value rhs, int* result) {
             *result = strcmp(GET_STRING(lhs), GET_STRING(rhs));
         } break;
         case TYPE_ODDBALL: {
-            // todo: is this how we want to order oddballs?
             int a = GET_ODDBALL(lhs), b = GET_ODDBALL(rhs);
             if (a < b) *result = -1;
             else if (a > b) *result = 1;
             else *result = 0;
         } break;
         case TYPE_CONTEXT: {
-            // todo: store #_cmp
-            Symbol symCmp = Symbol_find("_cmp", 4);
-            Value* pfn = Context_get(GET_CONTEXT(lhs), symCmp);
+            Value* pfn = Context_get(GET_CONTEXT(lhs), vm->symUCmp);
             if (!pfn) {
-                raiseUnbound2(vm, node, symCmp, lhs);
+                raiseUnbound2(vm, node, vm->symUCmp, lhs);
                 return false;
             } else {
                 int oldStk = vm->stack->next;
@@ -609,14 +610,12 @@ static bool valueEquality(VM* vm, AstNode* node, Value lhs, Value rhs, bool* res
             *result = GET_ODDBALL(lhs) == GET_ODDBALL(rhs);
         } break;
         case TYPE_CONTEXT: {
-            // todo: store #_eq
-            Symbol symEq = Symbol_find("_eq", 3);
-            Value* pfn = Context_get(GET_CONTEXT(lhs), symEq);
+            Value* pfn = Context_get(GET_CONTEXT(lhs), vm->symUEq);
             if (!pfn) {
                 // todo: do we want to return unbound here or have default behaviour?
                 //       default behaviour might be better for sort etc.
                 //       (this affects valueCompare too)
-                raiseUnbound2(vm, node, symEq, lhs);
+                raiseUnbound2(vm, node, vm->symUEq, lhs);
                 return false;
             } else {
                 int oldStk = vm->stack->next;
@@ -817,14 +816,8 @@ static bool applyOperator(VM* vm, AstNode* node, Value lhs, int op) {
     return true;
 }
 
-// todo: if we make only false/nil be falsey then we can do stuff like:
-// 'hello' .find('a') or! {throw! 'not found'}
 static bool isTruthy(Value v) {
     switch (GET_TYPE(v)) {
-        // case TYPE_NUMBER: return
-        //     fpclassify(GET_NUMBER(v)) != FP_ZERO &&
-        //     fpclassify(GET_NUMBER(v)) != FP_NAN;
-        // case TYPE_STRING: return GET_STRING(v)[0] != 0;
         case TYPE_ODDBALL: return
             GET_ODDBALL(v) == 0 || GET_ODDBALL(v) == 2;
         default: return true;
@@ -848,12 +841,12 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
         case SPC_MAP: {
             if (vm->stack->next == 0) return true;
             Stack* base = vm->stack;
-            vm->stack = GC_MALLOC(sizeof(Stack));
-            *vm->stack = (Stack) { .previous = base->previous };
+            vm->stack = Stack_acquire(base->previous);
             for (int i = 0; i < base->next; i++) {
                 Stack_push(vm->stack, base->values[i]);
                 if (!evalCall(vm, node, sub, NULL)) return false;
             }
+            Stack_release(base);
         } break;
         case SPC_FOLD: {
             while (vm->stack->next > 1) {
@@ -863,8 +856,7 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
         case SPC_FILTER: {
             if (vm->stack->next == 0) return true;
             Stack* base = vm->stack;
-            vm->stack = GC_MALLOC(sizeof(Stack));
-            *vm->stack = (Stack) { .previous = base->previous };
+            vm->stack = Stack_acquire(base->previous);
             for (int i = 0; i < base->next; i++) {
                 Stack_push(vm->stack, base->values[i]);
                 if (!evalCall(vm, node, sub, NULL)) return false;
@@ -876,10 +868,10 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
                     Stack_push(vm->stack, base->values[i]);
                 }
             }
+            Stack_release(base);
         } break;
         case SPC_ZIP: {
-            Stack* newStack = GC_MALLOC(sizeof(Stack));
-            *newStack = (Stack) { .previous = vm->stack->previous };
+            Stack* newStack = Stack_acquire(vm->stack->previous);
             while (vm->stack->next > 0) {
                 if (!evalCall(vm, node, sub, NULL)) return false;
                 if (vm->stack->next == 0) {
@@ -889,6 +881,7 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
                 Stack_push(newStack, Stack_pop(vm->stack));
             }
             Stack_reverse(newStack);
+            Stack_release(vm->stack);
             vm->stack = newStack;
         } break;
         case SPC_IS: {
@@ -987,7 +980,7 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
         } break;
         case SPC_JOIN: {
             // todo: define on vm
-            Symbol sJoin = Symbol_find("_join", 5);
+            Symbol sJoin = vm->symUJoin;
             Value* pfn = Context_get(getContext(vm, sub), sJoin);
             if (pfn) {
                 if (!evalCall(vm, node, *pfn, &sub)) return false;
@@ -1018,7 +1011,7 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
             }
             Value v = Stack_pop(vm->stack);
             // todo: define on vm
-            Symbol sWith = Symbol_find("_with", 5);
+            Symbol sWith = vm->symUWith;
             Value* pfn = Context_get(getContext(vm, v), sWith);
             if (pfn) {
                 Stack_push(vm->stack, sub);
@@ -1089,8 +1082,7 @@ void raiseUnderflow(VM* vm, AstNode* node, int n) {
 
 void raiseType(VM* vm, AstNode* node, Type type) {
     vm->exSymbol = vm->symExs[2];
-    // todo: name types
-    vm->exMessage = gc_sprintf("expected value of type %d", type);
+    vm->exMessage = gc_sprintf("expected value of type %s", typeNames[type]);
     vm->exTraceFirst = NULL;
     vm->exSourceHasTrace = node != NULL;
     traceNode(vm, node);
@@ -1167,10 +1159,9 @@ static void traceNative(VM* vm, NativeClosure* nc) {
 
 void VM_dump(VM* vm) {
     if (vm->stack->next == 0) return;
-    printf("\033[32m");
     for (int i = 0; i < vm->stack->next; i++) {
         if (i) putchar(' ');
         printf("%s", Value_repr(vm->stack->values[i], 1));
     }
-    printf("\033[0m\n");
+    printf("\n");
 }

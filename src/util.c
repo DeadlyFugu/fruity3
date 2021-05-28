@@ -343,10 +343,6 @@ Context* fpToContext(Value v) {
 #include <math.h>
 bool fpTruthy(Value v) {
     switch (GET_TYPE(v)) {
-        case TYPE_NUMBER: return
-            fpclassify(GET_NUMBER(v)) != FP_ZERO &&
-            fpclassify(GET_NUMBER(v)) != FP_NAN;
-        case TYPE_STRING: return GET_STRING(v)[0] != 0;
         case TYPE_ODDBALL: return
             GET_ODDBALL(v) == 0 || GET_ODDBALL(v) == 2;
         default: return true;

@@ -10,6 +10,7 @@ typedef struct sParser Parser;
 typedef struct sAstChainElem AstChainElem;
 typedef struct sAstNode AstNode;
 
+// todo: fully remove AST_PRIMITIVE and related code
 typedef enum AstKind {
     AST_NUMBER, AST_SYMBOL, AST_STRING, AST_ODDBALL,
     AST_CLOSURE, AST_OBJECT,
@@ -54,7 +55,6 @@ typedef enum SpecialKind {
     SPC_AND, SPC_OR
 } SpecialKind;
 
-// todo: probably go back to the more flexible any 3 symbol operators
 typedef enum OperatorKind {
     OPR_ADD, OPR_SUB, OPR_MUL, OPR_DIV,
     OPR_EQ, OPR_NEQ, OPR_LT, OPR_GT, OPR_LTEQ, OPR_GTEQ,

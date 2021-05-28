@@ -78,7 +78,6 @@ struct sBlob {
 #define VAL_TRUE    ((Value) { TYPE_ODDBALL, .as_int = 0 })
 #define VAL_FALSE   ((Value) { TYPE_ODDBALL, .as_int = 1 })
 #define VAL_DEFAULT ((Value) { TYPE_ODDBALL, .as_int = 2 })
-// todo: maybe rename nil -> none?
 #define VAL_NIL     ((Value) { TYPE_ODDBALL, .as_int = 3 })
 
 const char* Value_repr(Value v, int depth);

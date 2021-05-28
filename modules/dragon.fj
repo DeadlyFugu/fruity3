@@ -56,7 +56,7 @@ dragon.cat: {map $str builtin.strcat}
 dragon.mkstr: $builtin.strmk
 dragon.char: {
     dup type
-    is #Number then {mkstr(.)}
+    is #number then {mkstr(.)}
     else $builtin.strunmk
 }
 dragon.sym: $builtin.sym
@@ -223,7 +223,7 @@ dragon.extend: { a b =>
 $dragon >>dragon.root
 
 dragon.throw: { s =>
-    $s type = #Symbol then {
+    $s type = #symbol then {
         $s switch( $s
             #unbound 'key unbound'
             #underflow 'expected value(s) on stack'
@@ -270,9 +270,16 @@ Argument._visit: {.argument(self)}
 
 dragon.exit: {0 builtin.exit}
 
+// todo: copy/clone
+
 // todo: should sys be a separate module?
 dragon.sys: :{}
 dragon.sys.version: (0 builtin.sysctl)
+dragon.sys.args: list(1 builtin.sysctl)
+dragon.sys.uname: :{
+    sysname: nodename: release: version: machine: (2 builtin.sysctl)
+}
+dragon.sys.exec: {s => $s 3 builtin.sysctl}
 
 dragon.disasm: $builtin.disasm
 

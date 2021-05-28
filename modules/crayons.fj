@@ -68,7 +68,6 @@ colorizer.context: { ctx => (
             crayons.rep(getv($ctx $k))
         }
         top($ctx lsv size) - $nb >>inherit
-        // todo: show inherited if below some cutoff (4?)
         $inherit > 0 then {
             $inherit <= 4 then {
                 b: list($ctx lsb)

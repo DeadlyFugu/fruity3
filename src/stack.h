@@ -14,6 +14,8 @@ struct sStack {
 // todo: push/pop/size should be macros for perf
 
 // Stack* Stack_create(void);
+Stack* Stack_acquire(Stack* previous);
+void Stack_release(Stack* stack);
 void Stack_reserve(Stack* stack, int n);
 void Stack_push(Stack* stack, Value v);
 Value Stack_pop(Stack* stack);

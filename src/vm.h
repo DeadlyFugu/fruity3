@@ -27,8 +27,9 @@ struct sVM {
     bool fullTrace, noLock;
     Context* root;
     Context* context;
-    Symbol symSelf, symThis, symOps[21], symExs[5];
+    Symbol symSelf, symThis, symOps[21], symExs[5], symTypes[8];
     Symbol symKey, symValue, symMessage, symTrace;
+    Symbol symUApply, symUCmp, symUEq, symUJoin, symUWith;
     // instead have a context exposed to fruity with module contexts bound within?
     ModuleInfo** modules;
     int moduleCount;

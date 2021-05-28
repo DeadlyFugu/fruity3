@@ -292,73 +292,6 @@ bool fpIsIdentChar(char c) {
         c == '_';
 }
 
-// todo: this can definitely be compressed more
-//   maybe transform it so switch is on current char, then look up state transform in table?
-/*
-#define IS_DIGIT (c >= '0' && c <= '9')
-bool fpIsValidNumber(const char* str, int length) {
-    int state = 0;
-    for (int i = 0; i < length; i++) {
-        char c = str[i];
-        switch (state) {
-            case 0:
-                if (c == '-' || c == '+') state = 1;
-                else if (IS_DIGIT) state = 2;
-                else if (c == '.') state = 4;
-                else return false;
-                break;
-            case 1:
-                if (IS_DIGIT) state = 2;
-                else if (c == '.') state = 4;
-                else return false;
-                break;
-            case 2:
-                if (IS_DIGIT) {}
-                else if (c == ',') state = 3;
-                else if (c == '.') state = 4;
-                else if (c == 'e' || c == 'E') state = 7;
-                else return false;
-                break;
-            case 3:
-                if (IS_DIGIT) state = 2;
-                else return false;
-                break;
-            case 4:
-                if (IS_DIGIT) state = 5;
-                else return false;
-                break;
-            case 5:
-                if (c == ',') state = 6;
-                else if (IS_DIGIT) {}
-                else if (c == 'e' || c == 'E') state = 7;
-                else return false;
-                break;
-            case 6:
-                if (IS_DIGIT) state = 5;
-                else return false;
-                break;
-            case 7:
-                if (IS_DIGIT) state = 8;
-                else return false;
-                break;
-            case 8:
-                if (c == ',') state = 8;
-                else if (IS_DIGIT) {}
-                else return false;
-                break;
-            case 9:
-                if (IS_DIGIT) state = 8;
-                else return false;
-                break;
-            default:
-                assert(0 && "invalid state");
-        }
-    }
-    return state == 2 || state == 5 || state == 8;
-}
-#undef IS_DIGIT
-*/
-
 static const int ntDigit[10] = { 2, 2, 2, 2, 5, 5, 5, 8, 8, 8 };
 static const int ntSign[10] =  { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 static const int ntComma[10] = { 0, 0, 3, 0, 0, 6, 0, 0, 9, 0 };
@@ -451,8 +384,7 @@ static void printTraceLine(RangeInfo* info, ModuleInfo* module) {
     if (ioctlResult) conWidth = 80;
     if (info->endColumn != info->startColumn) {
         int startOffset = info->startColumn - 1;
-        // todo: 32m here makes source code green, not sure if thats looks nicer?
-        printf("\033[0m%.*s\033[0m", startOffset, info->firstLine);
+        printf("%.*s", startOffset, info->firstLine);
         int highlightWidth = info->firstLineLength - startOffset;
         if (info->startLine == info->endLine) {
             highlightWidth = info->endColumn - info->startColumn;
@@ -462,7 +394,7 @@ static void printTraceLine(RangeInfo* info, ModuleInfo* module) {
         int totalWidth = startOffset + highlightWidth;
         if (info->startLine == info->endLine) {
             int tailWidth = info->firstLineLength - totalWidth;
-            printf("\033[0m%.*s\033[0m", tailWidth, &info->firstLine[totalWidth]);
+            printf("%.*s", tailWidth, &info->firstLine[totalWidth]);
             totalWidth += tailWidth;
         }
         if (module && module->filename) {
@@ -619,7 +551,10 @@ Block* fpParse(ModuleInfo* moduleInfo) {
         root = fpParseBody(&parser, false);
     }
 
-    // todo: check if any left over tokens
+    if (parser.nextToken != parser.tokenCount) {
+        parserError(&parser, "unexpected token",
+            parser.tokens[parser.nextToken]);
+    }
     if (parser.firstError) {
         dumpParseErrors(&parser);
         return NULL;
@@ -632,10 +567,9 @@ Block* fpParse(ModuleInfo* moduleInfo) {
 
 AstNode* fpParseBody(Parser* parser, bool single) {
     if (parser->nextToken == parser->tokenCount) {
-        // todo: how to handle range for this?
         parserError(parser,
             "unexpected end of input",
-            (SourceRange) { 0, 0 });
+            parser->tokens[parser->nextToken-1]);
         return NULL;
     }
     SourceRange token = parser->tokens[parser->nextToken];
@@ -825,10 +759,6 @@ AstNode* fpParseBody(Parser* parser, bool single) {
             node->as_int = tkind - TOK_MAP;
             node->sub = fpParseBody(parser, true);
         } break;
-        case TOK_BACKSLASH_IDENT: {
-            node->kind = AST_PRIMITIVE;
-            node->as_int = -1; // todo: primitive lookup
-        } break;
         case TOK_IMPORT: {
             node->kind = AST_IMPORT;
             // if (!fpExpectToken(parser, TOK_CHAIN, true)) {
@@ -863,6 +793,7 @@ AstNode* fpParseBody(Parser* parser, bool single) {
             node->kind = AST_THIS;
         } break;
         default: {
+            // todo: token name
             parserError(parser,
                 gc_sprintf("unexpected token %d", tkind), token);
             return NULL;
@@ -928,8 +859,11 @@ bool fpExpectToken(Parser* parser, TokenKind kind, bool error) {
     if (parser->nextToken == parser->tokenCount ||
         parser->tokenKinds[parser->nextToken] != kind) {
         if (error) {
+            // todo: token name
+            int tkIndex = parser->nextToken;
+            if (tkIndex == parser->tokenCount) tkIndex--;
             parserError(parser, gc_sprintf("expected token %d", kind),
-                parser->tokens[parser->nextToken]);
+                parser->tokens[tkIndex]);
         }
         return false;
     }

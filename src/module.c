@@ -1,4 +1,5 @@
 #include "module.h"
+#include "fruity.h"
 #include "vm.h"
 #include "context.h"
 #include "parser.h"
@@ -181,6 +182,8 @@ static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path) {
     if (!VM_evalModule(vm, block, ctx)) return false;
     Value* exports = Context_get(ctx, Symbol_find("_export", 7));
     if (exports) info->value = *exports;
+    Value* hidden = Context_get(ctx, Symbol_find("_hidden", 7));
+    if (hidden) info->hideTrace = fpTruthy(*hidden);
     Value* delay = Context_get(ctx, Symbol_find("_delay", 6));
     if (delay) {
         if (!evalCall(vm, NULL, *delay, NULL)) return false;

@@ -79,10 +79,6 @@ simrepl: {
     cat($captured open) .trim dup len = 0 then $pop
     len($res) > 0 then {(
       $res open
-      //map {dup type = #String then {.quote}}
-      // map $rep
-      // join ' '
-      // parseCode
       parseVals
     )}
   }

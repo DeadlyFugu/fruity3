@@ -161,19 +161,8 @@ bool builtin_lsb(VM* vm) {
 
 bool builtin_type(VM* vm) {
     Value v;
-    // todo: string-or-symbol char in extract?
     if (!fpExtract(vm, "v", &v)) return false;
-    // todo: store interned type symbols on vm
-    switch (GET_TYPE(v)) {
-        case TYPE_NUMBER: fpPush(vm, FROM_SYMBOL(fpIntern("Number"))); break;
-        case TYPE_SYMBOL: fpPush(vm, FROM_SYMBOL(fpIntern("Symbol"))); break;
-        case TYPE_STRING: fpPush(vm, FROM_SYMBOL(fpIntern("String"))); break;
-        case TYPE_ODDBALL: fpPush(vm, FROM_SYMBOL(fpIntern("Oddball"))); break;
-        case TYPE_CONTEXT: fpPush(vm, FROM_SYMBOL(fpIntern("Context"))); break;
-        case TYPE_CLOSURE: fpPush(vm, FROM_SYMBOL(fpIntern("Closure"))); break;
-        case TYPE_LIST: fpPush(vm, FROM_SYMBOL(fpIntern("List"))); break;
-        case TYPE_BLOB: fpPush(vm, FROM_SYMBOL(fpIntern("Blob"))); break;
-    }
+    fpPush(vm, FROM_SYMBOL(vm->symTypes[GET_TYPE(v)]));
     return true;
 }
 
@@ -802,12 +791,34 @@ bool builtin_evalin(VM* vm) {
     return true;
 }
 
+extern char** fpArgv;
+extern int fpArgc;
+#include <sys/utsname.h>
 bool builtin_sysctl(VM* vm) {
     int cmd;
     if (!fpExtract(vm, "i", &cmd)) return false;
     switch (cmd) {
         case 0: { // get version
             fpPush(vm, fpFromDouble(3.0));
+        } break;
+        case 1: { // get args
+            for (int i = 0; i < fpArgc; i++) {
+                fpPush(vm, fpFromString(fpArgv[i]));
+            }
+        } break;
+        case 2: { // uname
+            struct utsname result;
+            uname(&result);
+            fpPush(vm, fpFromString(GC_strdup(result.sysname)));
+            fpPush(vm, fpFromString(GC_strdup(result.nodename)));
+            fpPush(vm, fpFromString(GC_strdup(result.release)));
+            fpPush(vm, fpFromString(GC_strdup(result.version)));
+            fpPush(vm, fpFromString(GC_strdup(result.machine)));
+        } break;
+        case 3: { // system
+            const char* str;
+            if (!fpExtract(vm, "s", &str)) return false;
+            fpPush(vm, fpFromDouble(system(str)));
         } break;
         default: {
             fpRaiseInvalid(vm, "invalid command number");

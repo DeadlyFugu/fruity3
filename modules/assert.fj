@@ -1,0 +1,15 @@
+
+assert: :{}
+
+assert.precondition: {else {#invalid 'invalid input' throwx}}
+assert.eq: {swap = () else {#error 'assertion failure' throwx}}
+assert.isnum: {type is #number else {#type 'expected number' throwx}}
+assert.isint: {v => $v type is #number and {$v dup = int} else {#type 'expected int' throwx}}
+assert.issym: {type is #symbol else {#type 'expected symbol' throwx}}
+assert.isstr: {type is #string else {#type 'expected string' throwx}}
+assert.isnil: {is nil else {#type 'expected nil' throwx}}
+assert.isnotnil: {is nil then {#type 'expected not nil' throwx}}
+assert.isempty: {len is 0 else {#invalid 'expected empty' throwx}}
+assert.isnotempty: {len is 0 then {#invalid 'expected not empty' throwx}}
+
+_export: $assert
