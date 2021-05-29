@@ -11,8 +11,6 @@ struct sStack {
     Stack* previous;
 };
 
-// todo: push/pop/size should be macros for perf
-
 // Stack* Stack_create(void);
 Stack* Stack_acquire(Stack* previous);
 void Stack_release(Stack* stack);

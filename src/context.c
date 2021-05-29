@@ -1,6 +1,7 @@
 #include "context.h"
 #include "symbols.h"
 #include <assert.h>
+#include <gc/gc.h>
 
 #define START_CAP 8
 #define HASH(k) ((k) ^ 0xF93A)
@@ -59,7 +60,7 @@ void Context_bind(Context* ctx, Symbol key, Value value) {
         Value* oldValues = ctx->values;
         ctx->capacity *= 2;
         // todo: can this be done with realloc instead?
-        ctx->keys = GC_MALLOC((sizeof(Symbol) + sizeof(Value)) *
+        ctx->keys = GC_MALLOC_IGNORE_OFF_PAGE((sizeof(Symbol) + sizeof(Value)) *
             ctx->capacity);
         ctx->values = (Value*) &ctx->keys[ctx->capacity];
         memset(ctx->keys, 0, sizeof(Symbol) * ctx->capacity);
@@ -98,4 +99,3 @@ void Context_dump(Context* ctx) {
             printf("  entry[%d] = <empty>\n", i);
     }
 }
-// 1 2 3 4 5 6 7 8 9 10 >>b >>c >>d >>e >>f >>g >>h >>i >>j >>k $b $c $d $e $f $g $h $i $j $k

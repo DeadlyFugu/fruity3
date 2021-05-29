@@ -150,7 +150,6 @@ int main(int argc, char** argv) {
             *module = (ModuleInfo) { "<eval>", run };
             Block* b = fpParse(module);
             if (!b) {
-                dumpError(&vm);
                 return 1;
             }
 

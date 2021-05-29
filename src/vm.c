@@ -465,10 +465,6 @@ static ResolveStatus chainResolve(VM* vm, AstNode* node,
 }
 
 Context* getContext(VM* vm, Value v) {
-    // todo: make this a macro for perf?
-    //       can do something like:
-    //  GET_TYPE(v) == TYPE_CONTEXT ? GET_CONTEXT(v) : vm->protos[GET_TYPE(v)]
-    // todo: maybe change name so different from GET_CONTEXT?
     Type t = GET_TYPE(v);
     if (t == TYPE_CONTEXT) {
         return GET_CONTEXT(v);
@@ -931,7 +927,19 @@ static bool evalSpecial(VM* vm, AstNode* node, int special, Value sub) {
                 raiseInvalid(vm, node, "context locked");
                 return false;
             }
-            GET_CONTEXT(lhs)->parent = subIsNil ? NULL : GET_CONTEXT(sub);
+            Context* subCtx = subIsNil ? NULL : GET_CONTEXT(sub);
+            Context* lhsCtx = GET_CONTEXT(lhs);
+            if (subCtx) {
+                Context* cc = subCtx;
+                while (cc) {
+                    if (cc == lhsCtx) {
+                        raiseInvalid(vm, node, "cannot set child as parent");
+                        return false;
+                    }
+                    cc = cc->parent;
+                }
+            }
+            lhsCtx->parent = subCtx;
         } break;
         case SPC_TO: {
             if (vm->stack->next == 0) {

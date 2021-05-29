@@ -1,4 +1,6 @@
 #include "common.h"
+#include "stack.h"
+#include "value.h"
 #include "vm.h"
 #include "fruity.h"
 
@@ -58,7 +60,6 @@ bool builtin_valstr(VM* vm) {
 bool builtin_getv(VM* vm) {
     Context* c;
     Symbol s;
-    // todo: string-or-symbol char in extract?
     if (!fpExtract(vm, "cy", &c, &s)) return false;
     Value* pv = Context_get(c, s);
     if (pv) fpPush(vm, *pv);
@@ -73,7 +74,6 @@ bool builtin_setv(VM* vm) {
     Context* c;
     Symbol s;
     Value v;
-    // todo: string-or-symbol char in extract?
     if (!fpExtract(vm, "cyv", &c, &s, &v)) return false;
     SetResult sr = Context_set(c, s, v);
     if (sr == SET_UNBOUND) {
@@ -90,7 +90,6 @@ bool builtin_bindv(VM* vm) {
     Context* c;
     Symbol s;
     Value v;
-    // todo: string-or-symbol char in extract?
     if (!fpExtract(vm, "cyv", &c, &s, &v)) return false;
     if (c->lock) {
         fpRaiseInvalid(vm, "context locked");
@@ -103,7 +102,6 @@ bool builtin_bindv(VM* vm) {
 bool builtin_hasv(VM* vm) {
     Context* c;
     Symbol s;
-    // todo: string-or-symbol char in extract?
     if (!fpExtract(vm, "cy", &c, &s)) return false;
     Value* pv = Context_get(c, s);
     fpPush(vm, pv ? VAL_TRUE : VAL_FALSE);
@@ -249,9 +247,12 @@ bool builtin_strunmk(VM* vm) {
     const char* str;
     if (!fpExtract(vm, "s", &str)) return false;
     // todo: unicode
+    int len = strlen(str);
+    Stack_reserve(vm->stack, len);
     for (int i = 0; str[i]; i++) {
-        fpPush(vm, fpFromDouble(str[i]));
+        vm->stack->values[vm->stack->next+i] = FROM_NUMBER(str[i]);
     }
+    vm->stack->next += len;
     return true;
 }
 
@@ -329,16 +330,30 @@ bool builtin_strstr(VM* vm) {
     return true;
 }
 
+static char* charpool;
+
 bool builtin_stropen(VM* vm) {
+    if (!charpool) {
+        charpool = GC_MALLOC_ATOMIC(128 * 2);
+        for (int i = 0; i < 128; i++) {
+            charpool[i*2] = i;
+            charpool[i*2+1] = 0;
+        }
+    }
+
     const char* str;
     if (!fpExtract(vm, "s", &str)) return false;
 
     char tmp[2];
     tmp[1] = 0;
     for (int i = 0; str[i]; i++) {
-        // todo: stropen with cached strings for ascii values
-        tmp[0] = str[i];
-        fpPush(vm, fpFromString(GC_strdup(tmp)));
+        unsigned char c = str[i];
+        if (c < 128) {
+            fpPush(vm, fpFromString(&charpool[c*2]));
+        } else {
+            tmp[0] = str[i];
+            fpPush(vm, fpFromString(GC_strdup(tmp)));
+        }
     }
     return true;
 }
@@ -376,7 +391,6 @@ bool builtin_strsub(VM* vm) {
     if (!hasEnd) end = len;
     if (end < 0) end += len;
     if (begin < 0 || end < 0 || end < begin || begin > len || end > len) {
-        // todo: separate #bounds exception type?
         fpRaiseInvalid(vm, "out of bounds");
         return false;
     }
@@ -447,7 +461,6 @@ bool builtin_strislo(VM* vm) {
     return true;
 }
 
-// todo: this should probably be elsewhere (util?)
 bool builtin_stresc(VM* vm) {
     const char* str;
     if (!fpExtract(vm, "s", &str)) return false;
@@ -530,7 +543,7 @@ bool builtin_throw(VM* vm) {
     Symbol sym;
     const char* msg;
     if (!fpExtract(vm, "ys", &sym, &msg)) return false;
-    // todo: somehow suppress builtin.so from showing up on exception
+    // todo: somehow suppress builtin from showing up on exception
     vm->exSymbol = sym;
     vm->exMessage = msg;
     vm->exTraceFirst = NULL;
@@ -546,8 +559,6 @@ bool builtin_exit(VM* vm) {
 }
 
 bool builtin_list(VM* vm) {
-    // todo: can we cheekily use less than full Stack size? (specifically
-    // drop allocating previous)
     Stack* list = GC_MALLOC(sizeof(Stack));
     *list = (Stack) {
         .values = vm->stack->values,
@@ -592,7 +603,6 @@ bool builtin_lstpop(VM* vm) {
     Stack* list;
     if (!fpExtract(vm, "l", &list)) return false;
     if (list->next == 0) {
-        // todo: separate #bounds exception type?
         fpRaiseInvalid(vm, "out of bounds");
         return false;
     }
@@ -607,7 +617,6 @@ bool builtin_lstget(VM* vm) {
     if (!fpExtract(vm, "li", &list, &index)) return false;
     if (index < 0) index += list->next;
     if (index < 0 || index >= list->next) {
-        // todo: separate #bounds exception type?
         fpRaiseInvalid(vm, "out of bounds");
         return false;
     }
@@ -622,7 +631,6 @@ bool builtin_lstset(VM* vm) {
     if (!fpExtract(vm, "liv", &list, &index, &v)) return false;
     if (index < 0) index += list->next;
     if (index < 0 || index >= list->next) {
-        // todo: separate #bounds exception type?
         fpRaiseInvalid(vm, "out of bounds");
         return false;
     }
@@ -661,7 +669,6 @@ bool builtin_lstsub(VM* vm) {
     if (begin < 0) begin += list->next;
     if (end < 0) end += list->next;
     if (begin < 0 || end < 0 || begin > list->next || end > list->next) {
-        // todo: separate #bounds exception type?
         fpRaiseInvalid(vm, "out of bounds");
         return false;
     }
@@ -889,7 +896,6 @@ bool builtin_blobsub(VM* vm) {
     if (!hasEnd) end = len;
     if (end < 0) end += len;
     if (begin < 0 || end < 0 || end < begin || begin > len || end > len) {
-        // todo: separate #bounds exception type?
         fpRaiseInvalid(vm, "out of bounds");
         return false;
     }
@@ -1261,11 +1267,8 @@ static Symbol symKind, symSub, symValue, symHead, symTail;
 
 static void pushDisasm(VM* vm, AstNode* node) {
     if (!node) return;
-    // todo: do we want some Unit parent ctx?
     Context* ctx = Context_create(NULL);
     Context_bind(ctx, symKind, FROM_SYMBOL(astKindSym[node->kind]));
-    // Context_bind(ctx, symBegin, FROM_NUMBER(node->pos.begin));
-    // Context_bind(ctx, symEnd, FROM_NUMBER(node->pos.end));
     Value v;
     bool hasVal = true, hasSub = false;
     Symbol sval = symValue, ssub = symSub;
@@ -1291,6 +1294,7 @@ static void pushDisasm(VM* vm, AstNode* node) {
         case AST_STRING:
             v = FROM_STRING(node->as_string); break;
         case AST_IMPORT:
+            ssub = astSpcSym[5];
         case AST_PREBIND:
         case AST_PRECALL:
         case AST_PRECALL_BARE:
@@ -1346,7 +1350,7 @@ static void pushDisasm(VM* vm, AstNode* node) {
             if (s->next != 0) {
                 Context* c = GET_CONTEXT(s->values[0]);
                 s = GET_LIST(*Context_get(c, symValue));
-                Context_bind(ctx, astSpcSym[5], s->values[0]);
+                Context_bind(ctx, ssub, s->values[0]);
             }
         } else if (hasSub) {
             Context_bind(ctx, ssub, vsub);

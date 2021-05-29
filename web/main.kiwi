@@ -171,6 +171,44 @@
   ]
 ]
 
+[bite Functions I
+  [p In Fruity, we can define our own custom functions with the following syntax:]
+  [repl
+    myfun: {0 swap sub}
+  ]
+  [p The above function negates a given value. In fact, there is already a standard function that does this: [code negate]. We can place any code we like between the braces, and typing the functions name will be equivalent to having typed out it's code in place of it.]
+  [repl
+    23 myfun
+    23 0 swap sub
+  ]
+  [p Unlike simple substitution recursion is possible, but we haven't covered conditional execution so please don't try it yet! Additionally, there are some minor differences which we will cover when we get there.]
+  [p We can even define functions within functions if we really want. These functions will only be accessible from within the function they are defined.]
+  [repl
+    quadruple: {double: {dup add} double double}
+  ]
+]
+
+[challenge Measuring Hypopotamuses
+  [p Write a function [code square] that calculates the square of a given value. Then, write a function [code hypo] that calculates length of a the hypotenuse given the two other sides (i.e. calculate c with pythagoreas' theorem), using the [code square] function you wrote.]
+  [repl square: {dup mul} dist: {}
+    7 square
+    3 4 dist
+    5 12 dist
+  ]
+  [hint [code pow] can be used for square roots.]
+  [answer
+    [repl
+    square: {dup mul}
+    dist: {square swap square add 0.5 pow}
+    7 square
+    3 4 dist
+    5 12 dist
+    ]
+    [p For [code square], we duplicate the top of the stack and then multiply them together, squaring the value.]
+    [p For [code dist], we [code square] the top two values of the stack, [code add] them together, and then raise to the power of a half to calculate the square root.]
+  ]
+]
+
 [bite Grouping
   [p Earlier we saw how postfix allows us to evaluate mathematical expressions like [code 1 - (2 + 3) * 4] without needing parentheses or worrying about BODMAS (or was it PEMDAS?).]
   [repl
@@ -203,9 +241,8 @@
   ]
 ]
 
-todo: maybe briefly introduce functions before this?
 [challenge Minmaxing
-  [p Although we haven't covered functions yet, here's code to define a function called [code nums] which pushes [code 5 3 9 7] to the stack. Copy paste this line into the REPL to define the function.]
+  [p Here's code to define a function called [code nums] which pushes [code 5 3 9 7] to the stack. Copy paste this line into the REPL to define the function.]
   [repl
   nums: {5 3 9 7}
   ]
@@ -213,7 +250,7 @@ todo: maybe briefly introduce functions before this?
   [repl _USER_: {(nums sort reverse top) (nums sort top)}
   _USER_
   ]
-  [hint Finding either the minimum or maximum can be done with just the functions we saw earlier.]
+  [hint Finding either the minimum or maximum can be done just using the functions we've seen so far.]
   [answer
   [p We can use [code sort reverse top] to find the minimum, and [code sort top] to find the maximum.]
   [repl
@@ -223,7 +260,12 @@ todo: maybe briefly introduce functions before this?
   [repl
   nums sort reverse top nums sort top
   ]
-  [p As an aside, you can define your own function [code NAME] with [code NAME: {_USER_}]. Typing [code NAME] is (mostly) identical to having typed out the parts within the braces. This isn't needed for any challenges until it's covered, but it might make some easier.]
+  [p You could make these into functions if you really wanted to. Most of these challenges don't really need you to define functions though, so you won't see this again for a while.]
+  [repl
+  min: {sort reverse top}
+  max: {sort top}
+  nums min (nums max)
+  ]
   ]
 ]
 
@@ -735,7 +777,7 @@ Hello, world!]
   ]
   [p This also works for finding methods on a value.]
   [repl
-  'abc' lsv // todo: this doesn't work yet lol
+  'abc' lsv
   ]
   [p In fact, you can just do [code $math] like we did for viewing the source of a function, but for most modules it's quite verbose.]
   [repl
@@ -872,8 +914,8 @@ Command: exit]
   ]
 ]
 
-[bite functions
-  [p Closures are considered a value in Fruity, no different to numbers or strings. We can push them to the stack and manipulate them however we want. This is also how the special functions work.]
+[bite Functions II
+  [p Closures are considered a value in Fruity, no different to numbers or strings. We can push them to the stack and manipulate them however we want. This is also how the arguments to the special functions work.]
   [repl
   {swap add}
   {+ 1} {/ 2} swap
@@ -882,7 +924,7 @@ Command: exit]
   [repl
   32 {+ 1} apply
   ]
-  [p You may have realised by now, but regular functions are just closures bound as variables (special functions like [code then ...] are the exception). Earlier in an aside we saw how we could see a functions implementation with '$' - it should be clear now why this shows up as a closure (note the curly braces).]
+  [p You may have realised by now, but regular functions are just closures bound as variables (special functions are the exception, those are implemented directly in the interpreter). The 'function syntax' that was introduced earlier is just a prebind and a closure. Earlier in an aside we saw how we could see a functions implementation with '$' - it should be clear now why this shows up as a closure (note the curly braces).]
   [repl
   $math.sum
   1 2 $add apply
@@ -1025,7 +1067,6 @@ Command: exit]
   [repl
   1 2 3 $math .sum
   ]
-  [p Importing also allows you to alias the import using the syntax [code import module as alias], which simply binds under the given alias. You can also import a specific variable from within a module using [code import module.key], for instance we could do [code import math.sum] which would bind the closure for the sum function to [code sum] in the current context.]
 ]
 
 [challenge Personal Info II
@@ -1161,7 +1202,6 @@ Command: exit]
   ]
 ]
 
-todo: maybe lists in the middle of contexts for a break?
 [bite Lists
   [p Finally we can move on from contexts! Another really useful type in Fruity is the list. Using the [code list] function, every value on the stack will be 'compressed' into a single list value. This can be useful for storing and restoring the stack later, or for more complex operations requiring several stacks at once.]
   [repl
@@ -1474,9 +1514,17 @@ $ fp -M ../modules]
   ]
   [p The above module would export the function [code rev_words], but [code rev_str] would not. The encapsulation isn't perfect, [code rev_str] could still be accessed by doing [code $.rev_words getp $.rev_str].]
   [p When a file is invoked directly from the commandline (or by the [mono -m] option), it will have the variable [code _main] bound. You can check the presence of this to optionally do something when a file is ran as main. The [code crayons] module uses this to display a test message - try it with [mono $ fp -m crayons].]
+  [p Importing also allows you to alias the import using the syntax [code import module as alias], which simply binds under the given alias. You can also import a specific variable from within a module using [code import module.key], for instance we could do [code import math.sum] which would bind the value for the sum function to [code sum] in the current context.]
+  [p You can also import a file that's not on the module path with the relative import statement. This will look for either a .fj or .so file in the same directory as the source file containing the statement. This can be used to split your own programs up into multiple files without needing to modify the module paths.]
+  [mono_bhl
+  import .utils _NL_
+  import .utils.parse_email _NL_
+  import .utils.parse_email as p_email
+  ]
+  [p This is the same as the regular import statement, but we prefix the module name by a dot.]
 ]
 [challenge Fruitilicious Todo II
-  [p Imrpove on your todo list from before. Use the features you've learnt like lists and variables to simplify your code. Feel free to make this as simple or as complex as you'd like. How much can you improve it over your first one? Maybe some fancy colors with [code crayons], or persistence with [code files]?]
+  [p Improve on your todo list from before. Use the features you've learnt like lists and variables to simplify your code. Feel free to make this as simple or as complex as you'd like. How much can you improve it over your first one? Maybe some fancy colors with [code crayons], or persistence with [code files]?]
 ]
 
 [bite What Next?

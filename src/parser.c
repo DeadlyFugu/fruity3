@@ -5,6 +5,30 @@
 // todo: expose via header
 extern const char* gc_sprintf(const char* fmt, ...);
 
+static const char* _TokenKind_labels[] = {
+    "NUMBER", "#IDENT", "STRING",
+    "true", "false", "default", "nil",
+    "{", "}", ":{",
+    "CHAIN", "$CHAIN", ">CHAIN",
+    ">>CHAIN", "?CHAIN", "&CHAIN",
+    "CHAIN:", "CHAIN(", "CHAIN!",
+    "+", "-", "*", "/",
+    "=", "!=", "<", ">", "<=", ">=",
+    "^", "%", "<<", ">>", "&", "|",
+    "++", "--", "**", "/%",
+    "<>",
+    "@IDENT",
+    "(", ")",
+    "DOTS",
+    "then", "else", "until", "do",
+    "map", "fold", "filter", "zip",
+    "is", "as", "to", "dot",
+    "join", "repeat", "with", "catch",
+    "and", "or",
+    "\\IDENT", "import", "this", "=>",
+    "ERROR"
+};
+
 static void parserError(Parser* parser, const char* msg, SourceRange range) {
     ParserError* err = GC_MALLOC(sizeof(ParserError));
     *err = (ParserError) {
@@ -552,7 +576,8 @@ Block* fpParse(ModuleInfo* moduleInfo) {
     }
 
     if (parser.nextToken != parser.tokenCount) {
-        parserError(&parser, "unexpected token",
+        parserError(&parser, gc_sprintf("unexpected token %s",
+            _TokenKind_labels[parser.tokenKinds[parser.nextToken]]),
             parser.tokens[parser.nextToken]);
     }
     if (parser.firstError) {
@@ -773,7 +798,7 @@ AstNode* fpParseBody(Parser* parser, bool single) {
             // node->as_string[nameLen] = 0;
             // printf("!!%s", node->as_string);
             AstNode* chain = fpParseBody(parser, true);
-            if (chain->kind != AST_CALLV) {
+            if (!chain || chain->kind != AST_CALLV) {
                 parserError(parser, "expected chain after import", token);
                 return NULL;
             }
@@ -793,9 +818,9 @@ AstNode* fpParseBody(Parser* parser, bool single) {
             node->kind = AST_THIS;
         } break;
         default: {
-            // todo: token name
             parserError(parser,
-                gc_sprintf("unexpected token %d", tkind), token);
+                gc_sprintf("unexpected token %s",
+                _TokenKind_labels[tkind]), token);
             return NULL;
         }
     }
@@ -859,11 +884,10 @@ bool fpExpectToken(Parser* parser, TokenKind kind, bool error) {
     if (parser->nextToken == parser->tokenCount ||
         parser->tokenKinds[parser->nextToken] != kind) {
         if (error) {
-            // todo: token name
             int tkIndex = parser->nextToken;
             if (tkIndex == parser->tokenCount) tkIndex--;
-            parserError(parser, gc_sprintf("expected token %d", kind),
-                parser->tokens[tkIndex]);
+            parserError(parser, gc_sprintf("expected token %s",
+                _TokenKind_labels[kind]), parser->tokens[tkIndex]);
         }
         return false;
     }

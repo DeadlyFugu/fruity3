@@ -9,8 +9,8 @@ struct sContext {
     Value* values;
     Context* parent;
     int capacity; // power of two (nonzero)
-    int count; // strictly < capacity
-    bool lock; // todo: combine with count field
+    int count:31; // strictly < capacity
+    bool lock:1;
 };
 
 typedef enum {
@@ -18,8 +18,6 @@ typedef enum {
     SET_UNBOUND,
     SET_LOCKED
 } SetResult;
-
-// todo: should we have a check when mutating parent to avoid loops?
 
 Context* Context_create(Context* parent);
 Value* Context_get(Context* ctx, Symbol key);

@@ -43,12 +43,7 @@ void* fpAllocData(u32 size);
 // ?X -> type X or nil (additional bool field for if set)
 // *X -> 0 or more repeats of X (where X is another type)
 // ? and * cannot be combined
-// todo: remove this, jsut have extract
-bool fpRequire(VM* vm, const char* sig);
-
 bool fpExtract(VM* vm, const char* sig, ...);
-
-// todo: fpUnpack which acts like require but also stores values?
 
 // Push value
 void fpPush(VM* vm, Value v);

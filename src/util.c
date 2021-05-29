@@ -387,13 +387,15 @@ void fpRaiseInternal(VM* vm, const char* msg) {
     raiseInternal(vm, msg);
 }
 
-// todo: dont malloc new if avoidable
 const char* fpStringEscape(const char* str) {
     int outlen = 0;
-    for (int i = 0; str[i]; i++) {
+    int i;
+    for (i = 0; str[i]; i++) {
         if (strchr("'\\\b\f\n\r\t", str[i])) outlen += 2;
         else outlen += 1;
     }
+    if (i == outlen) return str;
+
     char* buf = GC_MALLOC_ATOMIC(outlen + 1);
     int iout = 0;
     for (int iin = 0; str[iin]; iin++) {
