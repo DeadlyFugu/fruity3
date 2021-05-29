@@ -91,7 +91,8 @@ kiwi.ctx_html + (:{
   bite: {s => s.splitfirst('\n') store.pushBite}
   challenge: {s => s.splitfirst('\n') store.pushChallenge}
   code: {s => cat('<code>' $s parseCode '</code>')}
-  answer: {s => cat('<div class="answer"><h2 class="answer-h" onclick="spoiler()">Answer</h2><div id="answer-spoiler" style="display:none">' $s '</div></div>')}
+  // answer: {s => cat('<div class="answer"><h2 class="answer-h" onclick="spoiler()">Answer</h2><div id="answer-spoiler" style="display:none">' $s '</div></div>')}
+  answer: {s => cat('<h2>Answer</h2><div class="answer"><div class="answer-hide">' $s '</div><div class="answer-cover" onclick="spoiler(this)"><span>Reveal Answer</span></div></div>')}
   clrrepl: {s => (:{import math} as root) >eval_ctx}
   clrrepl2: {s => (:{} as root) >eval_ctx}
   repl: {s =>

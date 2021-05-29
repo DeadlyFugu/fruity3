@@ -2,17 +2,13 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Bite Sized Fruity - [name]</title>
+  <title>Fruity3 Bites - [name]</title>
   <link rel="stylesheet" type="text/css" href="style.css">
   <link rel="stylesheet" type="text/css" href="syntax.css">
   <script>
-  function spoiler() {
-    var spoiler = document.getElementById("answer-spoiler");
-    if (spoiler.style.display == "none") {
-      spoiler.style.display = "";
-    } else {
-      spoiler.style.display = "none";
-    }
+  function spoiler(el) {
+    el.style.display = "none";
+    el.parentElement.firstChild.classList.remove("answer-hide");
   }
   </script>
 </head>
@@ -20,31 +16,24 @@
   <header>
     <nav>
       <ul>
-        <li><a href="../index.html"><span class="logo">Fruity</span></a></li>
-        <li><a href="../index.html">Documentation</a></li>
+        <li><a href="../index.html"><span class="logo">Fruity&#xb3</span></a></li>
+        <li><a href="../index.html">Learn</a></li>
         <li><a href="../download.html">Download</a></li>
       </ul>
     </nav>
   </header>
-  <section class="doc-header">
-    <div>
-      <span>Bite #[id]: <span class="titlecase">[name]</span></span>
-    </div>
-  </section>
   <section class="doc-page">
+    <h2>Bite [id]: [name]</h2>
     [body]
-    <div class="challenge">
-      <h2>Challenge: <span class="titlecase">[challengeName]</span></h2>
-      [challengeBody]
-
-      <div class="bite-nav">
-        <a class="prev" href="[prev]">Previous</a>
-        <a class="next" href="[next]">Next</a>
-      </div>
+    <h2>Challenge: [challengeName]</h2>
+    [challengeBody]
+    <div class="bite-nav">
+      <a class="prev" href="[prev]">Previous</a>
+      <a class="next" href="[next]">Next</a>
     </div>
   </section>
   <footer>
-    <span>Copyright © 2015-2021 Matthew Turner</span>
+    <p>Copyright © 2015-2021 Matthew Turner</p>
   </footer>
 </body>
 </html>

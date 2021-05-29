@@ -4,9 +4,13 @@
 SRC_DIR := src
 OBJ_DIR := build
 
+# use either /usr/local or ~/.local
+# other directories will require modifying hardcoded module search paths
+INSTALL_DIR ?= /usr/local
+
 CC := clang
-CFLAGS := -g -Werror
-LDFLAGS := -rdynamic
+CFLAGS := -g -Werror -O2 -flto
+LDFLAGS := -rdynamic -O2 -flto
 CPPFLAGS := -MMD -MP
 LDLIBS := -lm -ldl -lgc -lreadline
 
@@ -14,9 +18,14 @@ SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 DEPS := $(wildcard $(OBJ_DIR)/*.d)
 
-.PHONY: clean all
+.PHONY: clean all install
 
 all: fp modules/modpcre2.so
+
+install:
+	install fp $(INSTALL_DIR)/bin
+	install -d $(INSTALL_DIR)/lib/fruity
+	install modules/* $(INSTALL_DIR)/lib/fruity
 
 fp: $(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@

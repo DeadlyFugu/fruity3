@@ -14,8 +14,8 @@ static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path);
 static bool loadNativeModule(VM* vm, ModuleInfo* info, const char* path);
 
 static const char* modPaths[16] = {
-    ".",
-    "./modules"
+    "/usr/local/lib/fruity",
+    "~/.local/lib/fruity"
 };
 static int nextModPath = 2;
 

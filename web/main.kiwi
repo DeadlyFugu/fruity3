@@ -949,7 +949,7 @@ Command: exit]
   [p Sigbinds bind in reverse order, much like nested prebinds do, so the rightmost sigbind is bound first (i.e. is the value on top of the stack).]
 ]
 
-[challenge
+[challenge Reverse N
   [p Write a function [code revn] that, given a number N on top of the stack, reverses the top N values only.]
   [repl revn: {n => reverse(dot $n)}
   'abcde' open 3 revn
