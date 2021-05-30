@@ -15,10 +15,16 @@ static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path);
 static bool loadNativeModule(VM* vm, ModuleInfo* info, const char* path);
 
 static const char* modPaths[16] = {
-    "/usr/local/lib/fruity",
-    "~/.local/lib/fruity"
+    "/usr/local/lib/fruity"
 };
-static int nextModPath = 2;
+static int nextModPath = 1;
+
+void Module_initPaths(void) {
+    const char* home = getenv("HOME");
+    if (home) {
+        modPaths[nextModPath++] = fpSprintf("%s/.local/lib/fruity", home);
+    }
+}
 
 void Module_addPath(const char* path) {
     // todo: allow any amount of mod paths

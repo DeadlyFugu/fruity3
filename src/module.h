@@ -20,6 +20,7 @@ struct sModuleInfo {
     const char* _realpath;
 };
 
+void Module_initPaths(void);
 void Module_addPath(const char* path);
 bool Module_import(VM* vm, const char* name, bool main);
 bool Module_importRel(VM* vm, const char* name, ModuleInfo* from);

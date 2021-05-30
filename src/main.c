@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
     bool fullTrace = false;
     bool noLocking = false;
 
+    Module_initPaths();
+
     int option;
     while ((option = getopt(argc, argv, "e:m:M:fFhtl")) != -1) {
         switch (option) {
