@@ -6,6 +6,7 @@
 #include "unistd.h"
 #include "sys/stat.h"
 #include "dlfcn.h"
+#include <errno.h>
 
 // todo: expose properly
 extern void raiseInternal(VM* vm, const char* msg);
@@ -101,7 +102,10 @@ bool Module_importRel(VM* vm, const char* name, ModuleInfo* from) {
 #include <limits.h>
 static bool importCommon(VM* vm, const char* name, bool main, bool native, char* path) {
     char rp[PATH_MAX];
-    realpath(path, rp);
+    errno = 0;
+    // todo: properly handle error cases of realpath
+    //       (specifically, note that not-existing is an error case)
+    if (realpath(path, rp)) {}
     for (int i = 0; i < vm->moduleCount; i++) {
         if (strcmp(vm->modules[i]->_realpath, rp) == 0) {
             // todo: have some 'loading' flag to detect circular imports?
@@ -149,7 +153,7 @@ bool Module_fromFile(VM* vm, const char* path, bool main) {
     info->native = false;
     info->filename = GC_strdup(path);
     char rp[PATH_MAX];
-    realpath(path, rp);
+    if (realpath(path, rp)) {}
     info->_realpath = GC_strdup(rp);
     return loadFruityModule(vm, info, path);
 }
@@ -169,7 +173,10 @@ static bool loadFruityModule(VM* vm, ModuleInfo* info, const char* path) {
     int size = ftell(mf);
     fseek(mf, 0, SEEK_SET);
     char* buf = GC_MALLOC(size + 1);
-    fread(buf, 1, size, mf);
+    if (fread(buf, 1, size, mf) != size) {
+        raiseInternal(vm, "io error reading module");
+        return false;
+    }
     buf[size] = 0;
     fclose(mf);
     info->source = buf;

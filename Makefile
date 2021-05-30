@@ -8,7 +8,6 @@ OBJ_DIR := build
 # other directories will require modifying hardcoded module search paths
 INSTALL_DIR ?= /usr/local
 
-CC := clang
 CFLAGS := -g -Werror -O2 -flto
 LDFLAGS := -rdynamic -O2 -flto
 CPPFLAGS := -MMD -MP
