@@ -1,0 +1,257 @@
+@import url(http://fonts.googleapis.com/css?family=Ubuntu);
+* { box-sizing: border-box; }
+
+html {
+	scrollbar-color: #606065 #252535;
+}
+
+body {
+	background: #161616;
+	font-family: "Source Sans Pro",sans-serif;
+	color: #aaa;
+	margin: 0;
+}
+
+ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+a {
+	color: #006D8D;
+	text-decoration: none;
+	line-height: 25px;
+}
+
+a:hover {
+	color: #003D4D;
+}
+
+p {
+	font-size: 16px;
+	line-height: 1.3em;
+	text-align: justify;
+}
+
+code {
+	font-size: 16px;
+}
+
+span.titlecase {
+	text-transform: capitalize;
+}
+
+section.doc-page pre {
+	background-color: #252535;
+	padding: 10px;
+	border-radius: 10px;
+	font-size: 16px;
+	white-space: pre-wrap;
+}
+
+nav {
+	border-bottom: 2px solid #252535
+}
+
+nav > ul {
+	width: 940px;
+	margin: 0px auto;
+}
+
+nav > ul > li {
+	display: inline-block;
+}
+
+nav > ul > li:hover {
+	background: #252535;
+}
+
+nav a {
+	color: #aaa;
+	font-family: sans-serif;
+	text-decoration: none;
+	padding: 20px;
+	display: inline-block;
+}
+
+nav a:hover {
+	color: #aad;
+}
+
+.logo {
+	display: inline-block;
+	font-family: 'Ubuntu', sans-serif;
+	font-size: 24px;
+	line-height: 10px;
+}
+
+section.hero {
+	height: 440px;
+	background-image: url(hero.jpg);
+	background-repeat: no-repeat;
+	background-position:50% 50%;  /* Sets reference point to scale from */
+	background-size:cover;        /* Sets background image to cover entire element */
+}
+
+div.hero-inner {
+	height: 100%;
+	width: 100%;
+	margin: 0px auto;
+	padding-top: 40px;
+	background: rgba(0,0,0,0.4);
+}
+
+div.hero-inner > h1 {
+	margin-left: 20px;
+	margin-top: 40px;
+	color: white;
+	text-align: center;
+	font-family: 'Ubuntu', sans-serif;
+	font-size: 96px;
+}
+
+div.hero-inner > h2 {
+	margin-left: 20px;
+	margin-top: 40px;
+	color: white;
+	text-align: center;
+	text-transform: lowercase;
+}
+
+footer {
+	width: 620px;
+	margin: 20px auto;
+	border-top: 1px solid #DDDDDD;
+	padding-top: 10px;
+	text-align: center;
+}
+
+footer > span {
+	font-family: "Source Sans Pro",sans-serif;
+	font-size: 16px;
+	color: #666666;
+	line-height: 1.3em;
+}
+
+section.doc-page {
+	width: 940px;
+	margin: 0px auto;
+}
+
+h2 {
+	width: 940px;
+	margin: 0px auto;
+	font-weight: 400;
+	line-height: 1.1em;
+	margin-top: 28px;
+	margin-left: 60px;
+}
+
+/* below: styles for bites */
+
+div.answer {
+	position: relative;
+	border: 2pt solid #252535;
+	padding: 10px;
+	border-radius: 10px;
+}
+
+.answer-hide {
+	filter: blur(6px);
+}
+
+.answer-cover {
+	position: absolute;
+	top: 0; bottom: 0; left: 0; right: 0;
+	display: flex;
+	justify-content: center;
+	background: #252535a0;
+	cursor: pointer;
+}
+
+.answer-cover > span {
+	align-self: center;
+	font-size: 28pt;
+	font-weight: bold;
+}
+
+a.prev {
+	font-family: "Source Sans Pro",sans-serif;
+	color: #aaa;
+	border: 2pt solid #252535;
+	margin-left: auto;
+	padding: 5px;
+	border-radius: 5px;
+	margin-right: 20px;
+}
+
+a.next {
+	font-family: "Source Sans Pro",sans-serif;
+	color: #aaa;
+	border: 2pt solid #252535;
+	margin-right: auto;
+	padding: 5px;
+	border-radius: 5px;
+}
+
+h2 {
+	font-family: 'Ubuntu', sans-serif;
+	font-weight: 400;
+	line-height: 1.1em;
+	margin-top: 28px;
+	margin-left: 20px;
+	margin-bottom: 16px;
+}
+
+div.answer > h2 {
+	margin: 0px;
+	cursor: pointer;
+}
+
+div.bite-nav {
+	text-align: center;
+	padding-top: 20px;
+}
+
+code {
+	background-color: #252535;
+	border-radius: 4px;
+	padding: 1px 3px;
+}
+
+span.fn {
+	color: #00AAB5;
+}
+
+span.var {
+	color: #F41C54;
+}
+
+span.arg {
+	color: #B141F4;
+}
+
+span.num {
+	color: #FF9F00;
+}
+
+span.sym {
+	color: #5685eb;
+}
+
+span.keyword {
+	color: #B141F4;
+}
+
+span.string {
+	color: #A8BF12;
+}
+
+span.faint {
+	color: #747369;
+}
+
+span.bold {
+	font-weight: bold;
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Fruity3 - Learn</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html"><span class="logo">Fruity&#xb3</span></a></li>
+        <li><a href="learn.html">Learn</a></li>
+        <li><a href="download.html">Download</a></li>
+      </ul>
+    </nav>
+  </header>
+  <section class="doc-page">
+    <h2>Learn Fruity</h2>
+    [index]
+    <ul>
+      [forbites <li><a href="bite{id}.html">({id}) {name}</a></li>]
+    </ul>
+  </section>
+  <footer>
+    <span>Copyright © 2015-2021 Matthew Turner</span>
+  </footer>
+</body>
+</html>

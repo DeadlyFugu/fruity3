@@ -1,7 +1,6 @@
 [index
-  [h Bite Sized Fruity]
-  [p Bite Sized Fruity is a series of short tutorials on the basic elements of the Fruity programming language. Fruity is kinda like the three-way bastard child of Forth, APL, and the weird bits of JavaScript, so unless you are familiar with all three languages already, reading through these from the beginning is recommended. Hell, even if you are familiar with all three, you'd surely realise how asinine that sounds and that you should probably read these from the beginning anyway.]
-  [p Each Bite will give an explaination of the concept, with examples. At the end of each bite is a challenge, with an example solution.]
+  [p Here you can find a series of short tutorials (called 'bites') on the basic elements of the Fruity programming language. Fruity is kinda like the three-way bastard child of Forth, APL, and the weird bits of JavaScript, so unless you are familiar with all three languages already, reading through these from the beginning is recommended. Hell, even if you are familiar with all three, you'd surely realise how asinine that sounds and that you should probably read these from the beginning anyway.]
+  [p Each bite will give an explaination of the concept, with examples. At the end of each bite is a challenge, with an example solution.]
 ]
 
 [bite Values
@@ -969,7 +968,7 @@ Command: exit]
   ]
 ]
 
-[bite contexts
+[bite Contexts
   [p Earlier I mentioned that all variables are bound within a context. These contexts can also be manipulated as values in Fruity. To access the context of the currently running code, use the [code this] keyword.]
   [clrrepl2]
   [repl
@@ -1014,7 +1013,7 @@ Command: exit]
   ]
 ]
 
-[challenge
+[challenge Context Content
   [p Write a function that, given a context, prints each variable bound in the following manner:]
   [repl pctx: {c => ($c lsv map {s => cat($s ' -> ' $c $s getv rep) print})}
   :{x: 32 y: 'fish'} pctx
@@ -1030,7 +1029,7 @@ Command: exit]
   ]
 ]
 
-[bite chaining
+[bite Chaining
   [p Often you will want to access a variable defined in a different context. Although this can be done with [code getv] and friends, it's not very convenient when we're looking up a fixed name. All of the variable related syntax we've seen so far looks up values within the current context, but if we prefix the variable name with a dot it will instead pop the top value off the stack and resolve it relative to that.]
   [repl
   j: :{'james' >>name 32 >>age}
@@ -1085,7 +1084,7 @@ Command: exit]
   ]
 ]
 
-[bite parenting
+[bite Parenting
   [p In Fruity, contexts may have another context specified as their 'parent'. If a variable can't be found, then it will try and resolve it in the parent context. This is how, for example, the variable [code x] is resolved in the following code:]
   [repl
   x: 32 true then {$x print}

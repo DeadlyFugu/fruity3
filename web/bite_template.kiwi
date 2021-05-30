@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Fruity3 Bites - [name]</title>
   <link rel="stylesheet" type="text/css" href="style.css">
-  <link rel="stylesheet" type="text/css" href="syntax.css">
   <script>
   function spoiler(el) {
     el.style.display = "none";
@@ -16,9 +15,9 @@
   <header>
     <nav>
       <ul>
-        <li><a href="../index.html"><span class="logo">Fruity&#xb3</span></a></li>
-        <li><a href="../index.html">Learn</a></li>
-        <li><a href="../download.html">Download</a></li>
+        <li><a href="index.html"><span class="logo">Fruity&#xb3</span></a></li>
+        <li><a href="learn.html">Learn</a></li>
+        <li><a href="download.html">Download</a></li>
       </ul>
     </nav>
   </header>

@@ -38,9 +38,9 @@ _asciiToSpan: list(
     cat($_e '[34m') _s! 'sym'
     cat($_e '[35m') _s! 'keyword'
     cat($_e '[36m') _s! 'fn'
-    cat($_e '[2m') _s! 'comment'
+    cat($_e '[2m') _s! 'faint'
     cat($_e '[1m') _s! 'bold'
-    cat($_e '[36m_USER_') cat(_s! 'comment' '&lt;your code here&gt;')
+    cat($_e '[36m_USER_') cat(_s! 'faint' '&lt;your code here&gt;')
     cat($_e '[36m_TAB_</span> ') '    '
     cat($_e '[36m_NL_</span> ') '\n'
     cat(' ' $_e '[36m_NL_</span>') '\n'
@@ -156,17 +156,17 @@ files.mkdir(bdir / 'out' str)
   $bite + (:{
     prev: ($bite.id > 1 then {
       cat('bite' $bite.id - 1 '.html')
-    } else 'index.html')
+    } else 'learn.html')
     next: ($bite.id < (store.items len) then {
       cat('bite' $bite.id + 1 '.html')
-    } else 'index.html')
+    } else 'learn.html')
   } as this)
   kiwi.parse_file
 })
 
-// Save index.html
-bdir / 'index_template.kiwi' str
-bdir / 'out/index.html' str
+// Save learn.html
+bdir / 'learn_template.kiwi' str
+bdir / 'out/learn.html' str
 kiwi.ctx_base + (:{
   index: $store.index
   forbites: {s => $store.items open map {item =>
@@ -175,3 +175,6 @@ kiwi.ctx_base + (:{
   }}
 } as this)
 kiwi.parse_file
+
+// copy style.css
+files.read('style.css') files.write('out/style.css' .)

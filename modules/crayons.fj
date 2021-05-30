@@ -48,7 +48,7 @@ _colorizeclos: { cl =>
     cat('{'
         sig.empty else {
             ($sig open reverse map $crayons.red
-            '=>' crayons.magenta join ' ') ' '
+            '=>' join ' ') ' '
         }
         . '}'
     )
