@@ -19,13 +19,14 @@ ul {
 }
 
 a {
-	color: #006D8D;
+	color: #7e7ea3;
 	text-decoration: none;
 	line-height: 25px;
 }
 
 a:hover {
-	color: #003D4D;
+	color: #aad;
+	background-color: #252535;
 }
 
 p {
@@ -122,7 +123,7 @@ div.hero-inner > h2 {
 footer {
 	width: 620px;
 	margin: 20px auto;
-	border-top: 1px solid #DDDDDD;
+	border-top: 1px solid #252535;
 	padding-top: 10px;
 	text-align: center;
 }
@@ -146,6 +147,12 @@ h2 {
 	line-height: 1.1em;
 	margin-top: 28px;
 	margin-left: 60px;
+}
+
+.doc-page li {
+	margin: 5px 40px;
+	border-left: 2px solid #252535;
+	padding-left: 20px;
 }
 
 /* below: styles for bites */
@@ -177,8 +184,6 @@ div.answer {
 }
 
 a.prev {
-	font-family: "Source Sans Pro",sans-serif;
-	color: #aaa;
 	border: 2pt solid #252535;
 	margin-left: auto;
 	padding: 5px;
@@ -187,8 +192,6 @@ a.prev {
 }
 
 a.next {
-	font-family: "Source Sans Pro",sans-serif;
-	color: #aaa;
 	border: 2pt solid #252535;
 	margin-right: auto;
 	padding: 5px;
@@ -202,6 +205,17 @@ h2 {
 	margin-top: 28px;
 	margin-left: 20px;
 	margin-bottom: 16px;
+}
+
+h1 {
+	font-family: 'Ubuntu', sans-serif;
+	font-weight: 400;
+	font-size: 36pt;
+	text-align: center;
+	line-height: 1.1em;
+	margin-top: 16px;
+	margin-left: 20px;
+	margin-bottom: 28px;
 }
 
 div.answer > h2 {
@@ -220,38 +234,38 @@ code {
 	padding: 1px 3px;
 }
 
-span.fn {
+.fn {
 	color: #00AAB5;
 }
 
-span.var {
+.var {
 	color: #F41C54;
 }
 
-span.arg {
+.arg {
 	color: #B141F4;
 }
 
-span.num {
+.num {
 	color: #FF9F00;
 }
 
-span.sym {
+.sym {
 	color: #5685eb;
 }
 
-span.keyword {
+.keyword {
 	color: #B141F4;
 }
 
-span.string {
+.string {
 	color: #A8BF12;
 }
 
-span.faint {
+.faint {
 	color: #747369;
 }
 
-span.bold {
+.bold {
 	font-weight: bold;
 }

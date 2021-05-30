@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Fruity3 - Learn</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html"><span class="logo">Fruity&#xb3</span></a></li
+        ><li><a href="learn.html">Learn</a></li
+        ><li><a href="download.html">Download</a></li>
+      </ul>
+    </nav>
+  </header>
+  <section class="doc-page">
+    <h1>Fruity<sup>3</sup></h1>
+    <p>Fruity is a stack based programming language with a modern syntax. It combines the best<sup class="faint">[citation needed]</sup> parts of Forth, APL, and JavaScript into one language.</p>
+    <p>The original implementation was made back in 2015. Fruity<sup>3</sup> is a complete re-implementation from the ground up in C with some minor language changes and various fixes.</p>
+    <h2>Example</h2>
+    [repl import crayons
+    crayons.faint! '// Hello world' print _KL_
+    'Hello, World!' print
+    crayons.faint! '\n// Show average of user entered numbers' print _KL_
+    input .split(' ') size >>n map $float fold $add / $n print
+    2 3 4 5
+    crayons.faint! '\n// Prototypal inheritance' print _KL_
+    Animal: :{name: 'Prototype' sound: 'nothing'}
+    Animal.speak: {print($self.name 'says' $self.sound join ' ')}
+    cow: (:{name: 'Cow' sound: 'moo'} as $Animal)
+    dog: (:{name: 'Dog' sound: 'bork'} as $Animal)
+    fox: (:{name: 'Fox'} as $Animal)
+    $cow $dog $fox map {.speak}
+    ]
+    <h2>Major Features</h2>
+    <ul>
+        <li>🍎 [b Flexible]</li>
+        <li>🍇 Interactive REPL with [b pretty colors]</li>
+        <li>🍍 Code obfuscation not required as it's [b moderately illegible]</li>
+        <li>🍌 Usually [b doesn't segfault] unless you do something wrong</li>
+        <li>🍒 About [b 2-10x] slower than CPython</li>
+        <li>🍉 Don't even think about [b security]</li>
+    </ul>
+  </section>
+  <footer>
+    <span>Copyright © 2015-2021 Matthew Turner</span>
+  </footer>
+</body>
+</html>

@@ -82,11 +82,13 @@ simrepl: {
       parseVals
     )}
   }
+  map {.split('\n')} filter {.contains('_KL_') not}
 }
 
 // Build context for bites' kiwi templates
 kiwi.ctx_html + (:{
   h: $kiwi.ctx_html.h3
+  b: {cat('<span class="bold">' . '</span>')}
   index: {>>store.index}
   bite: {s => s.splitfirst('\n') store.pushBite}
   challenge: {s => s.splitfirst('\n') store.pushChallenge}
@@ -174,6 +176,18 @@ kiwi.ctx_base + (:{
     $item kiwi.parse_string
   }}
 } as this)
+kiwi.parse_file
+
+// Save index.html
+bdir / 'index_template.kiwi' str
+bdir / 'out/index.html' str
+$bites_kiwi
+kiwi.parse_file
+
+// Save download.html
+bdir / 'download_template.kiwi' str
+bdir / 'out/download.html' str
+$bites_kiwi
 kiwi.parse_file
 
 // copy style.css

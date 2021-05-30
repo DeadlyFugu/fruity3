@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Fruity3 - Learn</title>
+  <title>Fruity3 - Download</title>
   <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
@@ -16,11 +16,8 @@
     </nav>
   </header>
   <section class="doc-page">
-    <h2>Learn Fruity</h2>
-    [index]
-    <ul>
-      [forbites <li><a href="bite{id}.html">({id}) {name}</a></li>]
-    </ul>
+    <h2>Download Fruity</h2>
+    <p>In progress...</p>
   </section>
   <footer>
     <span>Copyright © 2015-2021 Matthew Turner</span>

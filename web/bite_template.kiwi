@@ -15,9 +15,9 @@
   <header>
     <nav>
       <ul>
-        <li><a href="index.html"><span class="logo">Fruity&#xb3</span></a></li>
-        <li><a href="learn.html">Learn</a></li>
-        <li><a href="download.html">Download</a></li>
+        <li><a href="index.html"><span class="logo">Fruity&#xb3</span></a></li
+        ><li><a href="learn.html">Learn</a></li
+        ><li><a href="download.html">Download</a></li>
       </ul>
     </nav>
   </header>
@@ -27,8 +27,8 @@
     <h2>Challenge: [challengeName]</h2>
     [challengeBody]
     <div class="bite-nav">
-      <a class="prev" href="[prev]">Previous</a>
-      <a class="next" href="[next]">Next</a>
+      <a class="prev" href="[prev]">Previous</a
+      ><a class="next" href="[next]">Next</a>
     </div>
   </section>
   <footer>

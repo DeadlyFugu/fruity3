@@ -1,6 +1,0 @@
-
-print! 'hello i am fren'
-
-somefunc: {
-    + 10
-}

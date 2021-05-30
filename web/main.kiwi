@@ -1,6 +1,7 @@
 [index
   [p Here you can find a series of short tutorials (called 'bites') on the basic elements of the Fruity programming language. Fruity is kinda like the three-way bastard child of Forth, APL, and the weird bits of JavaScript, so unless you are familiar with all three languages already, reading through these from the beginning is recommended. Hell, even if you are familiar with all three, you'd surely realise how asinine that sounds and that you should probably read these from the beginning anyway.]
   [p Each bite will give an explaination of the concept, with examples. At the end of each bite is a challenge, with an example solution.]
+  [p Currently these tutorials are the only documentation that exists for the language.]
 ]
 
 [bite Values

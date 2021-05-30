@@ -148,8 +148,8 @@ String.trim: {self builtin.strtrim}
 String.replace: {a b => ($a self.split join $b)}
 String.drop: {n => self $n nil builtin.strsub}
 String.droptail: {n => self 0 $n negate builtin.strsub}
-String.startswith: {s => s._len negate self.droptail is $s}
-String.endswith: {s => s._len negate self.drop is $s}
+String.startswith: {s => s._len dup <= self._len then {negate self.droptail is $s} else {pop false}}
+String.endswith: {s => s._len dup <= self._len then {negate self.drop is $s} else {pop false}}
 String.upper: {self builtin.strupper}
 String.lower: {self builtin.strlower}
 String.isupper: {self builtin.strisup}

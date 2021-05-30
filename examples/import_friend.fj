@@ -1,6 +1,0 @@
-
-import .friend as fren
-
-fren.somefunc! 5 != 15 then {
-    throw! 'expected 15'
-}
