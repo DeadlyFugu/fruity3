@@ -56,7 +56,7 @@ _colorizeclos: { cl =>
 colorizer.closure: { f => (
     safe! {$f disasm}
     then {self _colorizeclos}
-    else {crayons.faint! '<native closure>'}
+    else {cat('{' crayons.faint! '<native code>' '}')}
 )}
 colorizer.oddball: $crayons.yellow
 colorizer.list: {self.openable('list' .)}

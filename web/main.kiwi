@@ -7,10 +7,12 @@
 [bite Values
   [p After installation, you can execute Fruity code either in the REPL, or by loading it from a file. Most of these tutorials expect you to be using the REPL, which you can launch with the command [mono fp]]
   [p Fruity has several types of values you can manipulate. The first we will cover is the number. You can type a number into the REPL and you will get that number back.]
-  [repl
+  [repl import crayons
   24
   -3.5
-  3e9
+  1.6e-35
+  '> ' printw crayons.yellow! '299,792,458' print '_KL_' pop
+  299,792,458 '_KL_' pop
   ]
   [p Another type is strings, much like you would expect from any other language. These always use single quotation marks.]
   [repl
@@ -41,7 +43,7 @@
   ]
   [p Below is an answer box, clicking on 'Answer' will show you a solution to the challenge. It will also explain how the solution works in detail. Usually there are multiple valid solutions to a challenge, comparing your solution with the provided answer may provide you with new insights.]
   [answer
-  [p Just type in the output. In Fruity, most output can be reproduced just by typing it in. Note that basically every challenge after this explicitly forbids you from just typing in the output otherwise it wouldn't be much of a challenge...]
+  [p Just type in the output. In Fruity, most output can be reproduced just by typing it in. Note that basically every challenge after this expects you not to just type in the output otherwise it wouldn't be much of a challenge...]
   [repl
   1 #two 'tree' 4
   ]
@@ -185,27 +187,28 @@
   [p We can even define functions within functions if we really want. These functions will only be accessible from within the function they are defined.]
   [repl
     quadruple: {double: {dup add} double double}
+    7 quadruple
   ]
 ]
 
 [challenge Measuring Hypopotamuses
   [p Write a function [code square] that calculates the square of a given value. Then, write a function [code hypo] that calculates length of a the hypotenuse given the two other sides (i.e. calculate c with pythagoreas' theorem), using the [code square] function you wrote.]
-  [repl square: {dup mul} dist: {}
+  [repl square: {dup mul} hypo: {square swap square add 0.5 pow}
     7 square
-    3 4 dist
-    5 12 dist
+    3 4 hypo
+    5 12 hypo
   ]
   [hint [code pow] can be used for square roots.]
   [answer
     [repl
     square: {dup mul}
-    dist: {square swap square add 0.5 pow}
+    hypo: {square swap square add 0.5 pow}
     7 square
-    3 4 dist
-    5 12 dist
+    3 4 hypo
+    5 12 hypo
     ]
     [p For [code square], we duplicate the top of the stack and then multiply them together, squaring the value.]
-    [p For [code dist], we [code square] the top two values of the stack, [code add] them together, and then raise to the power of a half to calculate the square root.]
+    [p For [code hypo], we [code square] the top two values of the stack, [code add] them together, and then raise to the power of a half to calculate the square root.]
   ]
 ]
 
@@ -317,7 +320,7 @@
   [repl
   32 rep #a rep 'Hello\nworld' rep
   ]
-  [p Note the string above looks extra confusing as it is essentially being [code rep]'d twice, once when we call [code rep] and another time by the REPL to display the output.]
+  [hint The string above looks extra confusing as it is essentially being [code rep]'d twice, once when we call [code rep] and another time by the REPL to display the output.]
   [p There are also the [code int] and [code float] functions, for converting a string to a number. The [code int] function will only accept integers. [code int] can also be used to round a number to the nearest integer.]
   [repl
   '32' int
@@ -350,7 +353,7 @@
   ]
 ]
 
-[challenge sdrawkcab
+[challenge sdrawkcaB
   [p Write a program that reverses whatever string it is given. For example:]
   [repl _USER_: {open reverse cat}
   'hello' _USER_
@@ -397,7 +400,7 @@
   ]
 ]
 
-[challenge Hi, Ny Name is...
+[challenge Hi, My Name is...
   [p Write a program that asks a user for their name, then prints a personalized greeting.]
   [repl _USER_: {'Enter your name: ' prompt 'Hello, ' printw print}
   _USER_
@@ -460,7 +463,7 @@
   21 5 2 add div 6 mul
   ]
   [answer
-  [p This one is pretty straightforward. Note that we need to put [code 5 + 2] into a group to make it execute first.]
+  [p This one is pretty straightforward. We need to put [code 5 + 2] into a group to make it execute first.]
   [repl
   21 / (5 + 2) * 6
   ]
@@ -661,8 +664,8 @@
   ]
   [p As a side note, you can prefix most regular functions in the REPL by '$' to see the source code. The logic behind this will be explained later, but it might be interesting for now to look at some functions we've learned so far to see how they work.]
   [repl
+  $swap
   $math.sum
-  $math.product
   ]
   [p Note that [code fold $add] is equivalent to [code fold {add}], but again that will be covered later.]
   [p The final major looping construct is [code zip ...]. This is very similar to [code map ...], but internally it works somewhat differently.]
@@ -739,8 +742,8 @@
   [p The [code dot .] in the second example will dot by the amount [code size - 1], as that will be the value on top of the stack that the [code .] pulls through. This will move all but one value from the old stack, so then we have a final [code .] on the end to move the final value on top of the new stack. This is equivalent to the [code under] function - in fact, it might just be how that function is implemented.]
 ]
 
-[challenge sdrawkcab sdrow
-  [p This challenge is more so a test of all your knowledge so far, rather than just the above bite. Write code that, given a string, will reverse the letters of each individual word within in, while maintaining the overall order of the words. There are no restrictions. (Well, ideally do it in Fruity or that misses the point)]
+[challenge sdrawkcaB sdroW
+  [p Write code that, given a string, will reverse the letters of each individual word within in, while maintaining the overall order of the words.]
   [repl _USER_: {.split! ' ' map {cat(. open reverse)} join ' '}
   'hello world' _USER_
   'fruity is stupid who made this crap' _USER_
@@ -750,7 +753,7 @@
   [repl
   'hello world' .split! ' ' map {cat(. open reverse)} join ' '
   ]
-  [p First we split the string into individual words with [code .split! ' '], and then we use [code map ...] to execute a closure for each of them. Within this closure, we reverse the string using a method similar to the earlier Sdrawkcab challenge. Because [code cat] operates on all values on the stack, we need to do this within a new group (otherwise values produced by previous executions of map's closure will be included). Finally, we use [code join ' '] to combine each word back together.]
+  [p First we split the string into individual words with [code .split! ' '], and then we use [code map ...] to execute a closure for each of them. Within this closure, we reverse the string using a method similar to the earlier sdrawkcaB challenge. Because [code cat] operates on all values on the stack, we need to do this within a new group (otherwise values produced by previous executions of map's closure will be included). Finally, we use [code join ' '] to combine each word back together.]
   [p Although we've only covered around half the language so far, you can see it's more than enough to start implementing some reasonably complex operations. Think about how you might do this in your favourite programming language.]
   ]
 ]
@@ -807,7 +810,7 @@ Command: exit]
   [p Warning: Implementing the remove command is a quite brutal without the content of the next bite, but a fun challenge. No shame in skipping that part if you find it too hard.]
   [hint Use the stack to store your todos. 'add' should be rather straightforward.]
   [answer
-<pre><code><span class="keyword">print!</span> <span class="string">'Welcome to my Fruitilicious Todo App!!!'</span>
+<pre><span class="keyword">print!</span> <span class="string">'Welcome to my Fruitilicious Todo App!!!'</span>
 <span class="keyword">print!</span> <span class="string">'The commands are: \'add\', \'list\', \'remove\' or \'exit\''</span>
 <span class="keyword">do</span> {
     <span class="keyword">prompt!</span> <span class="string">'Command: '</span>
@@ -839,7 +842,7 @@ Command: exit]
         <span class="sym">#ok</span>
     }
     <span class="keyword">!=</span> <span class="sym">#ok</span> <span class="keyword">then</span> {<span class="keyword">print!</span> <span class="string">'Command not recognised'</span>}
-}</code></pre>
+}</pre>
   [p The entire code is wrapped in a [code do ...] to loop forever. We use [code prompt] to get a message from the user, and then a series of [code dup = 'xxx'] to check which it is equal to. Each of these pushes [code #ok] at the end, so after all this if the value on the top of the stack isn't [code #ok] then we know the user entered an invalid command. This series of comparisons could be done more simply using either the [code chain] or [code switch] functions, but those haven't been covered.]
   [p The todo list itself is stored on the stack, and each of the three main commands just modifies the stack appropriately.]
   [p For adding to the list, we simply ask the user for their task. Since [code prompt] leaves it's result on the stack, it's all we need to do.]
@@ -1053,7 +1056,7 @@ Command: exit]
   16 >a.b.c
   $a.b
   ]
-  [p This is called a chain. Even in simpler cases like [code $foo] the part after the prefix is still called a chain. Each element of the chain is separated by a dot. The variable being accessed/bound/etc. is the final one. Chains can be arbitrarily long, each variable is resolved relative to the previous one.]
+  [p This is called a chain. Each element of the chain is separated by a dot. The variable being accessed/bound/etc. is the final one. Chains can be arbitrarily long, each variable is resolved relative to the previous one.]
   [p The earlier example could be rewritten to:]
   [repl
   j: :{'james' >>name 32 >>age}
@@ -1063,7 +1066,7 @@ Command: exit]
   $j
   ?j.occupation
   ]
-  [p Modules are also contexts. When we import a module, we are really binding a context in the current scope. [code import math] is roughly equivalent to [code :{...} >>math], where the dots are replaced with the contents of the math module. When we access a function within a module such as [code math.sum], we are using the exact chaining syntax described above. If we wanted to, we could access [code math.sum] as follows:]
+  [p Modules are also contexts. When we import a module, we are really binding a context in the current scope. [code import math] is roughly equivalent to [code :{...} >>math], where the dots are replaced with the contents of the math module. When we access a function within a module such as [code math.sum], we are using the exact chaining syntax described above. If we wanted to, we could instead access [code math.sum] as follows:]
   [repl
   1 2 3 $math .sum
   ]
@@ -1152,7 +1155,7 @@ Command: exit]
   ]
   [p First we split the string into words and filter out any empty parts with [code .split(' ') filter {len > 0}]. Then we [code reverse] the stack so the first part of the string is on top. Then for each of the variables we bind them if the stack is not yet empty, then finally we set the parent to a prototype object with default values we defined earlier.]
   [p By convention, I usually name prototype objects with a capital letter to distinguish them from the constructor.]
-  [p Honestly most of the difficulty in this challenge has nothing to do with parenting, I should probably change it.]
+  [p Honestly most of the difficulty in this challenge has nothing to do with parenting.]
   ]
 ]
 
@@ -1183,6 +1186,11 @@ Command: exit]
   ]
   [hint Originally I used [code cat] instead of [code catto] and then a later bite messed up when I used the [code cat] function. Be careful using global function names, yo!]
   [p Importantly, we define the method outside of the object for Animal. If we defined the function within it, it would have Animal set as it's parent. Since Animal will have it's parent set to [code nil], the function will not be able to resolve global variables. A similar issue would occur with [code obj.show] from before, that function only works because it doesn't rely on any globally defined variables.]
+  [p Another thing to be careful of is that self will not be bound if the closure is first retrieved and then applied later.]
+  [repl
+  ',' 'a,b,c' .split
+  ',' 'a,b,c' $.split apply
+  ]
 ]
 
 [challenge Personal Info IV
@@ -1435,6 +1443,7 @@ arguments (leave for later?)
   [repl
   import repl
   1 to 5 reverse
+  repl.context.prev: {1 to 5 reverse} '_KL_' pop
   repl.prev map {+ 1}
   {s => s.upper} repl.minirepl
   hello
@@ -1531,6 +1540,6 @@ $ fp -M ../modules]
   [p Congratulations, if you've followed the tutorials up to here then your probably the only other person in the world who knows this language! This is more of a toy language, so it's not particularly useful for writing large programs, but I've found various uses for it over the years just for simple scripts or answering random questions (like, whats the sum of the first 10 prime numbers?).]
   [p If you want to learn more, you can look through some of the example programs, as well as the source to the various modules.]
 ]
-[challenge
+[challenge Make Something
   [p Make something cool, or contribute back to Fruity itself! There's still lots of work to be done and testing needed. Feedback is always welcome, too.]
 ]
