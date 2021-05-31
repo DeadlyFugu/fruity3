@@ -17,7 +17,8 @@
   </header>
   <section class="doc-page">
     <h2>Download Fruity</h2>
-    <p>In progress...</p>
+    <p>Prebuilt binaries are not yet available. Windows is not supported.</pa>
+    <p>You can build and install Fruity from source for any Unix-based OS by going to the <a href="https://github.com/DeadlyFugu/fruity3">Github project</a> and following the instructions there.</p>
   </section>
   <footer>
     <span>Copyright © 2015-2021 Matthew Turner</span>
