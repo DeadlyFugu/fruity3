@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
     }
 
     if (runKind == 0) {
-        printf("fruitpunch 3.0\n");
+        printf("fruitpunch 3.1 indev\n");
     }
 
     if (useFallback && runKind != 0) {

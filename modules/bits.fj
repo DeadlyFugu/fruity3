@@ -1,14 +1,32 @@
+import builtin
 
-and: {}
-or: {}
-xor: {}
-not: {}
+bits: :{}
+bits.and: {builtin.bitand}
+bits.or: {builtin.bitor}
+bits.xor: {builtin.bitxor}
+bits.not: {builtin.bitnot}
 
-shl: {}
-shr: {}
+bits.shl: {builtin.bitshift}
+bits.shr: {negate builtin.bitshift}
 
-binary: {} // convert number <-> binary string
-hex: {} // convert number <-> hex string
-octal: {} // convert number <-> octal string
+// convert number <-> binary string
+bits.binary: {int >>b
+    $b < 0 then {$b + (2 ^ 32) >b}
+    cat(until {$b < 1} do {$b 2 divmod swap >b} reverse)
+}
+// convert number <-> hex string
+bits.hex: {int >>b
+    $b < 0 then {$b + (2 ^ 32) >b}
+    cat(until {$b < 1} do {$b 16 divmod swap >b} map {dup > 10 then {- 10 + char('a') char}} reverse)
+}
+// convert number <-> octal string
+bits.octal: {int >>b
+    $b < 0 then {$b + (2 ^ 32) >b}
+    cat(until {$b < 1} do {$b 8 divmod swap >b} reverse)
+}
 
-// some bits.BitField type of arbitrary size?
+// some bits.BitSet type of arbitrary size?
+
+_export: $bits
+lock! this
+lock! $bits

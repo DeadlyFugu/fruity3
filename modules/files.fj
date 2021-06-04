@@ -3,12 +3,22 @@ import builtin
 
 files: :{}
 
-files.read: $builtin.read
-files.write: $builtin.write
-// todo: files.append?
+files.read: {builtin.read (. open mkstr)}
+files.write: {
+    dup ?.blob then {.blob}
+    builtin.write
+}
+files.append: {
+    dup ?.blob then {.blob}
+    builtin.append
+}
 files.ls: {
     (. builtin.dir filter {.get(0) != '.'})
 }
+files.mkdir: $builtin.mkdir
+files.stat: $builtin.stat
+files.realpath: $builtin.realpath
+files.chdir: $builtin.chdir
 
 files.join: {
     filter {len > 0}
@@ -21,6 +31,5 @@ Path.new: {:{str >>s} as $Path}
 Path._div: {Path.new($self.s . files.join)}
 Path._str: {$self.s}
 files.path: $Path.new
-files.mkdir: $builtin.mkdir
 
 _export: $files

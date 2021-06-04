@@ -1,4 +1,5 @@
 #include "common.h"
+#include "context.h"
 #include "stack.h"
 #include "value.h"
 #include "vm.h"
@@ -7,6 +8,7 @@
 #include <errno.h>
 #include <gc/gc.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <math.h>
@@ -209,6 +211,17 @@ bool builtin_bitnot(VM* vm) {
     int a;
     if (!fpExtract(vm, "i", &a)) return false;
     fpPush(vm, fpFromDouble(~a));
+    return true;
+}
+
+bool builtin_bitshift(VM* vm) {
+    int a, b;
+    if (!fpExtract(vm, "ii", &a, &b)) return false;
+    if (b > 0) {
+        fpPush(vm, fpFromDouble(a << b));
+    } else {
+        fpPush(vm, fpFromDouble(a >> (-b)));
+    }
     return true;
 }
 
@@ -815,7 +828,7 @@ bool builtin_sysctl(VM* vm) {
     if (!fpExtract(vm, "i", &cmd)) return false;
     switch (cmd) {
         case 0: { // get version
-            fpPush(vm, fpFromDouble(3.0));
+            fpPush(vm, fpFromDouble(3.1));
         } break;
         case 1: { // get args
             for (int i = 0; i < fpArgc; i++) {
@@ -1173,7 +1186,7 @@ bool builtin_blobdec(VM* vm) {
 bool builtin_read(VM* vm) {
     const char* path;
     if (!fpExtract(vm, "s", &path)) return false;
-    FILE* f = fopen(path, "r");
+    FILE* f = fopen(path, "rb");
     if (!f) {
         // todo: better type than #invalid (#io?)
         fpRaiseInvalid(vm, "file not found");
@@ -1182,30 +1195,49 @@ bool builtin_read(VM* vm) {
     fseek(f, 0, SEEK_END);
     int size = ftell(f);
     fseek(f, 0, SEEK_SET);
-    char* buffer = GC_MALLOC(size + 1);
+    char* buffer = GC_MALLOC(size);
     if (fread(buffer, size, 1, f) != 1) {
         fclose(f);
         // todo: better type than #invalid (#io?)
         fpRaiseInvalid(vm, "error reading file");
         return false;
     }
-    buffer[size] = 0;
     fclose(f);
-    fpPush(vm, fpFromString(buffer));
+    fpPush(vm, Value_makeBlob(size, (const u8*) buffer));
     return true;
 }
 
 bool builtin_write(VM* vm) {
     const char* path;
-    const char* str;
-    if (!fpExtract(vm, "ss", &path, &str)) return false;
-    FILE* f = fopen(path, "w");
+    Blob* blob;
+    if (!fpExtract(vm, "sB", &path, &blob)) return false;
+    FILE* f = fopen(path, "wb");
     if (!f) {
         // todo: better type than #invalid (#io?)
         fpRaiseInvalid(vm, "could not open file");
         return false;
     }
-    if (fwrite(str, strlen(str), 1, f) != 1) {
+    if (fwrite(blob->data, blob->size, 1, f) != 1) {
+        fclose(f);
+        // todo: better type than #invalid (#io?)
+        fpRaiseInvalid(vm, "error writing file");
+        return false;
+    }
+    fclose(f);
+    return true;
+}
+
+bool builtin_append(VM* vm) {
+    const char* path;
+    Blob* blob;
+    if (!fpExtract(vm, "sB", &path, &blob)) return false;
+    FILE* f = fopen(path, "ab");
+    if (!f) {
+        // todo: better type than #invalid (#io?)
+        fpRaiseInvalid(vm, "could not open file");
+        return false;
+    }
+    if (fwrite(blob->data, blob->size, 1, f) != 1) {
         fclose(f);
         // todo: better type than #invalid (#io?)
         fpRaiseInvalid(vm, "error writing file");
@@ -1239,6 +1271,51 @@ bool builtin_mkdir(VM* vm) {
     if (!fpExtract(vm, "s", &path)) return false;
     // todo: throw if mkdir fails
     mkdir(path, 0775);
+    return true;
+}
+
+bool builtin_stat(VM* vm) {
+    const char* path;
+    if (!fpExtract(vm, "s", &path)) return false;
+    struct stat sb = {};
+    stat(path, &sb);
+    Context* ctx = Context_create(NULL);
+    fpContextBind(ctx, fpIntern("dev"), fpFromDouble(sb.st_dev));
+    fpContextBind(ctx, fpIntern("ino"), fpFromDouble(sb.st_ino));
+    fpContextBind(ctx, fpIntern("mode"), fpFromDouble(sb.st_mode));
+    fpContextBind(ctx, fpIntern("nlink"), fpFromDouble(sb.st_nlink));
+    fpContextBind(ctx, fpIntern("uid"), fpFromDouble(sb.st_uid));
+    fpContextBind(ctx, fpIntern("gid"), fpFromDouble(sb.st_gid));
+    fpContextBind(ctx, fpIntern("rdev"), fpFromDouble(sb.st_rdev));
+    fpContextBind(ctx, fpIntern("size"), fpFromDouble(sb.st_size));
+    fpContextBind(ctx, fpIntern("blksize"), fpFromDouble(sb.st_blksize));
+    fpContextBind(ctx, fpIntern("blocks"), fpFromDouble(sb.st_blocks));
+    fpContextBind(ctx, fpIntern("atime"), fpFromDouble(sb.st_atime));
+    fpContextBind(ctx, fpIntern("mtime"), fpFromDouble(sb.st_mtime));
+    fpContextBind(ctx, fpIntern("ctime"), fpFromDouble(sb.st_ctime));
+    fpPush(vm, fpFromContext(ctx));
+    return true;
+}
+
+bool builtin_realpath(VM* vm) {
+    const char* path;
+    if (!fpExtract(vm, "s", &path)) return false;
+    char resolved[PATH_MAX];
+    if (!realpath(path, resolved)) {
+        fpRaiseInvalid(vm, "error in realpath");
+        return false;
+    }
+    fpPush(vm, fpFromString(GC_strndup(resolved, PATH_MAX)));
+    return true;
+}
+
+bool builtin_chdir(VM* vm) {
+    const char* path;
+    if (!fpExtract(vm, "s", &path)) return false;
+    if (chdir(path)) {
+        fpRaiseInvalid(vm, "error in chdir");
+        return false;
+    }
     return true;
 }
 
@@ -1432,6 +1509,7 @@ bool register_builtin(VM* vm, ModuleInfo* module) {
     REGISTER(bitor);
     REGISTER(bitxor);
     REGISTER(bitnot);
+    REGISTER(bitshift);
     REGISTER(print);
     REGISTER(prompt);
     REGISTER(addhist);
@@ -1485,8 +1563,12 @@ bool register_builtin(VM* vm, ModuleInfo* module) {
     REGISTER(blobdec);
     REGISTER(read);
     REGISTER(write);
+    REGISTER(append);
     REGISTER(dir);
     REGISTER(mkdir);
+    REGISTER(stat);
+    REGISTER(realpath);
+    REGISTER(chdir);
     REGISTER(disasm);
     REGISTER(lock);
     REGISTER(test);

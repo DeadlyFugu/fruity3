@@ -10,16 +10,17 @@ This has only been tested on Ubuntu 20.04, but any Unix-like OS should be suffic
 - `libreadline`
 - `libpcre2` (optional, use `make fp` instead of `make` to avoid this)
 
-To compile and install, simply run the following commands:
+To compile and install, run the following commands. Remove `-b v3.0` to instead install the latest in-development version.
 
 ```
-$ git clone https://github.com/DeadlyFugu/fruity3.git
+$ git clone -b v3.0 https://github.com/DeadlyFugu/fruity3.git
 $ cd fruity3
+$ mkdir build
 $ make
 $ make install
 ```
 
-This will likely require super user permission (it writes to `/usr/local`). You can instead install to `~/.local` with the below command. Installing elsewhere is not recommended as these two paths are hardcoded into the binary (see `module.c`).
+The last line will likely require super user permission (it writes to `/usr/local`). You can instead install to `~/.local` with the below command. Installing elsewhere is not recommended as these two paths are hardcoded into the binary (see `module.c`).
 
 ```
 $ make install INSTALL_DIR=~/.local
