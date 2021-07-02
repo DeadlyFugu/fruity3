@@ -233,10 +233,10 @@ static bool evalNode(VM* vm, AstNode* node) {
                 return false;
             }
             // todo: evalAndPop?
-            if (!evalNode(vm, node->sub)) {
+            Value v;
+            if (!evalAndPop(vm, node->sub, &v)) {
                 return false;
             }
-            Value v = Stack_pop(vm->stack);
             Context_bind(base, chainElem->symbol, v);
         } break;
         case AST_PRECALL: {
