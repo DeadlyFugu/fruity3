@@ -38,6 +38,9 @@ $(OBJECTS): $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 modules/modpcre2.so: src/modules/modpcre2.c
 	$(CC) $(CFLAGS) -shared -o modules/modpcre2.so -fPIC src/modules/modpcre2.c -lpcre2-8
 
+modules/modjson.so: src/modules/modjson.c src/modules/parson.c src/modules/parson.h
+	$(CC) $(CFLAGS) -shared -o modules/modjson.so -fPIC src/modules/modjson.c src/modules/parson.c
+
 clean:
 	$(RM) $(DEPS) $(OBJECTS) modules/mod*.so
 
