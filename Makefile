@@ -19,7 +19,7 @@ DEPS := $(wildcard $(OBJ_DIR)/*.d)
 
 .PHONY: clean all install
 
-all: fp modules/modpcre2.so
+all: fp modules/modpcre2.so modules/modjson.so
 
 install:
 	install fp $(INSTALL_DIR)/bin
