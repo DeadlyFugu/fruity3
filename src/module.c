@@ -88,7 +88,7 @@ bool Module_importRel(VM* vm, const char* name, ModuleInfo* from) {
     char path[1024];
     snprintf(path, 1024, "%.*s/%s.fj", base_len, base, name);
     struct stat s;
-    bool found, native;
+    bool found = false, native = false;
     if (stat(path, &s) == 0) {
         found = true;
     } else {
